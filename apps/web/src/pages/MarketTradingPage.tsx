@@ -9,10 +9,10 @@ import { Link } from "../router";
 import { useSession } from "../state/session";
 import type { MarketTrade } from "../types";
 
-import { Icon } from "../components/Icon";
 import { MarketChart } from "../components/MarketChart";
+import { Orderbook } from "../components/Orderbook";
 import { StatusPill } from "../components/StatusPill";
-import { TerminalHeader } from "../components/TerminalHeader";
+import { TopNavigation } from "../components/TopNavigation";
 import { TradeTicket } from "../components/TradeTicket";
 
 // Generate mock trades to fill the list when there are few real trades
@@ -33,18 +33,18 @@ function generateMockTrades(marketId: string, count: number): MarketTrade[] {
     const traderIndex = i % mockTraders.length;
     const trader = mockTraders[traderIndex] ?? mockTraders[0]!;
     const side = Math.random() > 0.5 ? "YES" : "NO";
-    const volume = Math.floor(Math.random() * 90) + 10; // 10-100 Coin
+    const volume = Math.floor(Math.random() * 90) + 10;
     
     return {
       id: `mock-${marketId}-${i}`,
-      createdAt: new Date(now - (i + 1) * 3600000).toISOString(), // 1 hour apart
+      createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
       accountType: "AGENT",
       traderId: trader.id,
       traderDisplayName: trader.name,
       side,
       action: "BUY",
       volumeCoin: volume,
-      sharesOutCoin: volume * (0.9 + Math.random() * 0.2), // Approximate shares
+      sharesOutCoin: volume * (0.9 + Math.random() * 0.2),
       priceYesAfter: side === "YES" ? 0.5 + Math.random() * 0.2 : 0.5 - Math.random() * 0.2
     };
   });
@@ -58,6 +58,15 @@ export function MarketTradingPage(props: { marketId: string }) {
   const portfolioQ = usePortfolio(session.apiKey);
 
   const market = marketQ.market;
+  
+  // Track orderbook prices for display
+  const [orderbookPrices, setOrderbookPrices] = React.useState<{ bestBid: number; bestAsk: number } | null>(null);
+  
+  // Calculate display prices from orderbook
+  // YES price = best ask (what you pay to buy YES)
+  // NO price = 100¢ - best bid (implied NO price)
+  const yesPrice = orderbookPrices ? orderbookPrices.bestAsk : (market?.priceYes ?? 0.5);
+  const noPrice = orderbookPrices ? (1 - orderbookPrices.bestBid) : (market?.priceNo ?? 0.5);
 
   // Transform user's positions and history for this market into trade format
   const userTrades: MarketTrade[] = React.useMemo(() => {
@@ -69,7 +78,6 @@ export function MarketTradingPage(props: { marketId: string }) {
       ? (session.walletAddress ? `${session.walletAddress.slice(0, 6)}...${session.walletAddress.slice(-4)}` : "You")
       : (session.agentId ? `Agent_${shortId(session.agentId)}` : "You");
 
-    // Transform active positions into trades
     portfolioQ.portfolio.positions
       .filter((p) => p.marketId === props.marketId)
       .forEach((p) => {
@@ -103,7 +111,6 @@ export function MarketTradingPage(props: { marketId: string }) {
         }
       });
 
-    // Transform history into trades
     portfolioQ.portfolio.history
       .filter((h) => h.marketId === props.marketId)
       .forEach((h) => {
@@ -126,235 +133,277 @@ export function MarketTradingPage(props: { marketId: string }) {
 
   // Combine all trades and add mocks if needed
   const recentTrades = React.useMemo(() => {
-    // Combine API trades and user trades
     const allTrades = [...tradesQ.trades, ...userTrades];
-    
-    // Sort by createdAt (newest first)
     allTrades.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-    // If less than 5 trades, add mock trades
     if (allTrades.length < 5) {
       const mockCount = 5 - allTrades.length;
       const mocks = generateMockTrades(props.marketId, mockCount);
       allTrades.push(...mocks);
     }
     
-    // Return only latest 10
     return allTrades.slice(0, 10);
   }, [tradesQ.trades, userTrades, props.marketId]);
 
   return (
-    <div className="min-h-screen bg-background-dark text-slate-300 font-display antialiased">
-      <TerminalHeader activePath="/markets" />
+    <div className="min-h-screen bg-bg-main">
+      <TopNavigation activePath="/markets" />
 
-      <main className="max-w-[1600px] mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          {marketQ.loading ? (
-            <div className="rounded-sm border border-border-dark bg-surface-dark p-6 font-mono">Loading market…</div>
-          ) : marketQ.error ? (
-            <div className="rounded-sm border border-border-dark bg-surface-dark p-6 font-mono text-red-400">{marketQ.error}</div>
-          ) : !market ? (
-            <div className="rounded-sm border border-border-dark bg-surface-dark p-6 font-mono">Market not found.</div>
-          ) : (
-            <>
-              {/* Market header (stitch: advanced_market_analytics_&_trading) */}
-              <header className="flex items-start justify-between border-b border-border-dark pb-6">
-                <div className="flex gap-5">
-                  <div className="w-16 h-16 rounded-sm bg-surface-dark border border-border-dark flex items-center justify-center shrink-0">
-                    <span className="text-3xl filter grayscale opacity-80">🤖</span>
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {marketQ.loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center gap-3 text-text-secondary">
+              <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Loading market…
+            </div>
+          </div>
+        ) : marketQ.error ? (
+          <div className="bg-danger/10 border border-danger/30 text-danger rounded-lg p-6">
+            {marketQ.error}
+          </div>
+        ) : !market ? (
+          <div className="bg-surface border border-border rounded-lg p-8 text-center">
+            <p className="text-text-secondary">Market not found</p>
+            <Link to="/markets" className="inline-block mt-4 text-primary hover:text-primary-hover font-medium">
+              ← Back to Markets
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Market Header */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-surface border border-border rounded-lg flex items-center justify-center shrink-0">
+                  <span className="text-2xl">🤖</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <StatusPill status={market.status} outcome={market.outcome} />
+                    <span className="text-text-tertiary text-xs">Binary Market</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2 font-mono">
-                      <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-blue-900/20 text-blue-400 border border-blue-900/50">
-                        M0_SEEDED
-                      </span>
-                      <span className="text-xs text-slate-500 uppercase">MODE: CLOB</span>
-                      <StatusPill status={market.status} outcome={market.outcome} />
+                  <h1 className="text-xl font-bold text-text-main">{market.title}</h1>
+                  {market.description && (
+                    <p className="text-text-secondary text-sm mt-1 max-w-2xl">{market.description}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Price Display - Using orderbook prices that jump live */}
+              <div className="flex items-center gap-6 bg-surface rounded-lg px-6 py-4 border border-border">
+                <div className="text-center min-w-[100px]">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">YES Ask</p>
+                  <p className={`text-3xl font-bold ${market.status === 'RESOLVED' ? (market.outcome === 'YES' ? 'text-success' : 'text-gray-600') : 'text-success'} tabular-nums`}>
+                    {market.status === 'RESOLVED' 
+                      ? (market.outcome === 'YES' ? '$1.00' : '$0.00')
+                      : `${Math.round(yesPrice * 100)}¢`
+                    }
+                  </p>
+                  {market.status !== 'RESOLVED' && (
+                    <p className="text-xs text-success/70 mt-1 flex items-center justify-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                      Live
+                    </p>
+                  )}
+                </div>
+                <div className="w-px h-12 bg-border" />
+                <div className="text-center min-w-[100px]">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">NO Implied</p>
+                  <p className={`text-3xl font-bold ${market.status === 'RESOLVED' ? (market.outcome === 'NO' ? 'text-danger' : 'text-gray-600') : 'text-danger'} tabular-nums`}>
+                    {market.status === 'RESOLVED' 
+                      ? (market.outcome === 'NO' ? '$1.00' : '$0.00')
+                      : `${Math.round(noPrice * 100)}¢`
+                    }
+                  </p>
+                  {market.status !== 'RESOLVED' && (
+                    <p className="text-xs text-danger/70 mt-1">100¢ - Bid</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Trading Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Chart & Trades */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Chart */}
+                <div className="bg-surface rounded-lg border border-border overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-text-main">Price History</h2>
+                    <div className="flex items-center gap-2 text-xs text-text-secondary">
+                      <span className="w-2 h-2 rounded-full bg-success" />
+                      YES
+                      <span className="w-2 h-2 rounded-full bg-danger ml-2" />
+                      NO
                     </div>
-                    <h1 className="text-2xl font-bold leading-tight mb-2 text-white font-mono tracking-tight">{market.title}</h1>
-                    <p className="text-sm text-slate-400 max-w-2xl font-mono leading-relaxed opacity-80">
-                      {market.description ?? "Binary market. Buy YES/NO shares via CLOB."}
+                  </div>
+                  <div className="p-4">
+                    <MarketChart marketId={market.id} />
+                  </div>
+                </div>
+
+                {/* Market Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-surface rounded-lg p-4 border border-border">
+                    <p className="text-text-tertiary text-xs uppercase">YES {market.status === 'RESOLVED' ? 'Payout' : 'Ask'}</p>
+                    <p className={`text-lg font-bold mt-1 ${market.status === 'RESOLVED' ? (market.outcome === 'YES' ? 'text-success' : 'text-gray-600') : 'text-success'}`}>
+                      {market.status === 'RESOLVED' 
+                        ? (market.outcome === 'YES' ? '$1.00' : '$0.00')
+                        : fmtPct01(yesPrice)
+                      }
                     </p>
                   </div>
-                </div>
-
-                <div className="text-right hidden sm:block">
-                  <div className="text-4xl font-mono font-bold text-primary tracking-tighter mb-1">
-                    {Math.round(market.priceYes * 100)}
-                    <span className="text-lg align-top opacity-60">¢</span>
+                  <div className="bg-surface rounded-lg p-4 border border-border">
+                    <p className="text-text-tertiary text-xs uppercase">NO {market.status === 'RESOLVED' ? 'Payout' : 'Implied'}</p>
+                    <p className={`text-lg font-bold mt-1 ${market.status === 'RESOLVED' ? (market.outcome === 'NO' ? 'text-danger' : 'text-gray-600') : 'text-danger'}`}>
+                      {market.status === 'RESOLVED' 
+                        ? (market.outcome === 'NO' ? '$1.00' : '$0.00')
+                        : fmtPct01(noPrice)
+                      }
+                    </p>
                   </div>
-                  <div className="text-xs font-mono text-trade-yes font-medium flex items-center justify-end gap-1">
-                    <Icon name="trending_up" className="text-xs" />
-                    IMPLIED_YES
+                  <div className="bg-surface rounded-lg p-4 border border-border">
+                    <p className="text-text-tertiary text-xs uppercase">Trading Fee</p>
+                    <p className="text-lg font-bold text-text-main mt-1">1%</p>
                   </div>
-                </div>
-              </header>
-
-              {/* Chart */}
-              <MarketChart marketId={market.id} />
-
-              {/* Panels */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-surface-dark rounded-sm border border-border-dark overflow-hidden">
-                  <div className="px-4 py-2 border-b border-border-dark flex justify-between items-center bg-panel-dark">
-                    <h3 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-300">CLOB Snapshot</h3>
-                    <span className="text-[10px] font-mono text-slate-500">MODEL: CLOB</span>
-                  </div>
-                  <div className="p-4 space-y-3 font-mono text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">YES</span>
-                      <span className="text-trade-yes">{fmtPct01(market.priceYes)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">NO</span>
-                      <span className="text-trade-no">{fmtPct01(market.priceNo)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Fee</span>
-                      <span className="text-white">1%</span>
-                    </div>
-                    <div className="pt-2 text-[10px] text-slate-600">
-                      Order book UI is not applicable for CLOB. This panel replaces it.
-                    </div>
+                  <div className="bg-surface rounded-lg p-4 border border-border">
+                    <p className="text-text-tertiary text-xs uppercase">Status</p>
+                    <p className={`text-lg font-bold mt-1 ${market.status === 'RESOLVED' ? 'text-danger' : 'text-primary'}`}>{market.status}</p>
                   </div>
                 </div>
 
-                <div className="bg-surface-dark rounded-sm border border-border-dark overflow-hidden">
-                  <div className="px-4 py-2 border-b border-border-dark flex justify-between items-center bg-panel-dark">
-                    <h3 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-300">Markets</h3>
-                    <span className="text-[10px] font-mono text-slate-500">NAV</span>
+                {/* Recent Trades */}
+                <div className="bg-surface rounded-lg border border-border overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-text-main">Recent Trades</h2>
+                    <button
+                      onClick={() => {
+                        void tradesQ.refresh();
+                        void portfolioQ.refresh();
+                      }}
+                      className="p-1.5 text-text-secondary hover:text-text-main hover:bg-surface-hover rounded transition-colors"
+                      title="Refresh"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
                   </div>
-                  <div className="p-4 space-y-2">
-                    {marketsQ.loading ? (
-                      <div className="text-text-dim font-mono text-xs">Loading…</div>
-                    ) : marketsQ.error ? (
-                      <div className="text-red-400 font-mono text-xs">{marketsQ.error}</div>
-                    ) : (
-                      marketsQ.markets.slice(0, 6).map((m) => (
-                        <Link
-                          key={m.id}
-                          to={`/market/${m.id}`}
-                          className={`block px-3 py-2 rounded-sm border transition-colors ${
-                            m.id === market.id
-                              ? "border-primary/40 bg-primary/10"
-                              : "border-border-dark bg-black/30 hover:bg-black/50 hover:border-primary/30"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="text-white font-mono text-[11px] font-bold truncate">{m.title}</div>
-                              <div className="text-slate-600 font-mono text-[10px]">
-                                YES {Math.round(m.priceYes * 100)}% · NO {Math.round(m.priceNo * 100)}%
-                              </div>
-                            </div>
-                            <span className="text-primary font-mono text-[10px]">OPEN</span>
-                          </div>
-                        </Link>
-                      ))
-                    )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-bg-secondary text-text-secondary text-xs uppercase">
+                          <th className="px-4 py-2 text-left font-medium">Type</th>
+                          <th className="px-4 py-2 text-left font-medium">Trader</th>
+                          <th className="px-4 py-2 text-right font-medium">Volume</th>
+                          <th className="px-4 py-2 text-right font-medium">YES Price</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border text-sm">
+                        {tradesQ.loading || portfolioQ.loading ? (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-8 text-center text-text-secondary">
+                              Loading trades…
+                            </td>
+                          </tr>
+                        ) : recentTrades.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-8 text-center text-text-secondary">
+                              No recent trades
+                            </td>
+                          </tr>
+                        ) : (
+                          recentTrades.map((t) => {
+                            const from = t.traderDisplayName ?? (t.accountType === "HUMAN" && t.xHandle ? `@${t.xHandle}` : shortId(t.traderId));
+                            const isUserTrade = t.traderId === session.userId || t.traderId === session.agentId;
+                            return (
+                              <tr key={t.id} className={`hover:bg-surface-hover/50 transition-colors ${isUserTrade ? "bg-primary/5" : ""}`}>
+                                <td className="px-4 py-3">
+                                  <span className={t.side === "YES" ? "text-success font-medium" : "text-danger font-medium"}>
+                                    {t.action} {t.side}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-text-main">
+                                  {isUserTrade ? <span className="text-primary">{from} (You)</span> : from}
+                                </td>
+                                <td className="px-4 py-3 text-right text-text-secondary font-mono">{fmtCoin(t.volumeCoin)} C</td>
+                                <td className="px-4 py-3 text-right text-text-main font-mono">{fmtPct01(t.priceYesAfter)}</td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          {market ? (
-            <TradeTicket
-              market={market}
-              onAfterTrade={() => {
-                void marketQ.refresh();
-                void marketsQ.refresh();
-                void tradesQ.refresh();
-                void portfolioQ.refresh();
-              }}
-            />
-          ) : (
-            <div className="rounded-sm border border-border-dark bg-surface-dark p-6 font-mono">Select a market.</div>
-          )}
+              {/* Right Column - Trade Ticket, Orderbook & Related */}
+              <div className="space-y-6">
+                <TradeTicket
+                  market={market}
+                  onAfterTrade={() => {
+                    void marketQ.refresh();
+                    void marketsQ.refresh();
+                    void tradesQ.refresh();
+                    void portfolioQ.refresh();
+                  }}
+                />
 
-          <div className="rounded-sm border border-border-dark bg-surface-dark overflow-hidden">
-            <div className="px-4 py-3 border-b border-border-dark bg-panel-dark flex items-center justify-between">
-              <div className="text-white font-mono text-xs font-bold uppercase tracking-wider">Recent Trades</div>
-              <button
-                className="text-text-dim hover:text-white transition-colors"
-                onClick={() => {
-                  void tradesQ.refresh();
-                  void portfolioQ.refresh();
-                }}
-                type="button"
-                title="refresh"
-              >
-                <Icon name="refresh" className="text-[18px]" />
-              </button>
-            </div>
+                {/* Orderbook */}
+                <Orderbook 
+                  midPrice={market.priceYes} 
+                  status={market.status} 
+                  outcome={market.outcome}
+                  onPriceUpdate={setOrderbookPrices}
+                />
 
-            <div className="p-4">
-              {tradesQ.loading || portfolioQ.loading ? (
-                <div className="text-text-dim font-mono text-xs">Loading…</div>
-              ) : tradesQ.error ? (
-                <div className="text-red-400 font-mono text-xs">{tradesQ.error}</div>
-              ) : recentTrades.length === 0 ? (
-                <div className="text-text-dim font-mono text-xs">No recent trades.</div>
-              ) : (
-                <div className="overflow-x-auto custom-scrollbar">
-                  <table className="w-full text-left border-collapse font-mono">
-                    <thead>
-                      <tr className="text-[10px] uppercase tracking-widest text-text-dim border-b border-border-dark">
-                        <th className="py-2 pr-3">Type</th>
-                        <th className="py-2 pr-3">From</th>
-                        <th className="py-2 pr-3 text-right">Vol</th>
-                        <th className="py-2 text-right">YES_px</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-xs divide-y divide-border-dark">
-                      {recentTrades.map((t) => {
-                        const actionCls = t.action === "BUY" ? "text-trade-yes" : "text-trade-no";
-                        const from = t.traderDisplayName ?? (t.accountType === "HUMAN" && t.xHandle ? `@${t.xHandle}` : shortId(t.traderId));
-                        const isUserTrade = t.traderId === session.userId || t.traderId === session.agentId;
-                        return (
-                          <tr key={t.id} className={`hover:bg-black/30 transition-colors ${isUserTrade ? "bg-primary/5" : ""}`}>
-                            <td className={`py-2 pr-3 font-bold ${actionCls}`}>{t.action}</td>
-                            <td className="py-2 pr-3 text-white truncate max-w-[12rem]" title={t.traderId}>
-                              {isUserTrade ? <span className="text-primary">{from} (You)</span> : from}
-                            </td>
-                            <td className="py-2 pr-3 text-right text-text-dim">{fmtCoin(t.volumeCoin)}</td>
-                            <td className="py-2 text-right text-white">{fmtPct01(t.priceYesAfter)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                {/* Related Markets */}
+                <div className="bg-surface rounded-lg border border-border overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border">
+                    <h2 className="text-sm font-semibold text-text-main">More Markets</h2>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {marketsQ.loading ? (
+                      <div className="p-4 text-center text-text-secondary text-sm">Loading…</div>
+                    ) : marketsQ.error ? (
+                      <div className="p-4 text-center text-danger text-sm">{marketsQ.error}</div>
+                    ) : (
+                      marketsQ.markets
+                        .filter((m) => m.id !== market.id)
+                        .slice(0, 5)
+                        .map((m) => (
+                          <Link
+                            key={m.id}
+                            to={`/market/${m.id}`}
+                            className="block p-3 rounded bg-bg-secondary hover:bg-surface-hover border border-transparent hover:border-border transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-text-main text-sm font-medium truncate">{m.title}</p>
+                                <p className="text-text-tertiary text-xs mt-0.5">
+                                  YES {Math.round(m.priceYes * 100)}¢ · NO {Math.round(m.priceNo * 100)}¢
+                                </p>
+                              </div>
+                              <span className="text-success text-xs font-semibold">OPEN</span>
+                            </div>
+                          </Link>
+                        ))
+                    )}
+                  </div>
+                  <Link
+                    to="/markets"
+                    className="block w-full py-3 text-center text-sm text-primary hover:text-primary-hover font-medium border-t border-border hover:bg-surface-hover transition-colors"
+                  >
+                    View All Markets →
+                  </Link>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-sm border border-border-dark bg-surface-dark p-4">
-            <div className="text-white font-mono text-xs font-bold uppercase tracking-wider">Quick Links</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                to="/markets"
-                className="px-2 py-1 rounded-sm bg-primary/10 text-primary border border-primary/40 text-[10px] uppercase font-bold hover:bg-primary/20 transition-colors"
-              >
-                Markets
-              </Link>
-              <Link
-                to="/leaderboard"
-                className="px-2 py-1 rounded-sm bg-white/5 text-text-dim border border-border-dark text-[10px] uppercase font-bold hover:border-text-dim hover:text-white transition-colors"
-              >
-                Leaderboard
-              </Link>
-              <button
-                className="px-2 py-1 rounded-sm bg-white/5 text-text-dim border border-border-dark text-[10px] uppercase font-bold hover:border-text-dim hover:text-white transition-colors"
-                onClick={() => void marketQ.refresh()}
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </main>
     </div>
   );

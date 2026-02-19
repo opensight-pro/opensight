@@ -9,8 +9,8 @@ import { STARTING_BALANCE_MICROS, microsToCoinNumber } from "../constants.js";
 
 const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID ?? "";
 const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET ?? "";
-const TWITTER_CALLBACK_URL = process.env.TWITTER_CALLBACK_URL ?? "http://localhost:3001/oauth/twitter/callback";
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://molt.market";
+const TWITTER_CALLBACK_URL = process.env.TWITTER_CALLBACK_URL ?? "https://opencast.markets/oauth/twitter/callback";
+const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://opencast.markets";
 
 const oauthStates = new Map<string, { codeVerifier: string; createdAt: number }>();
 

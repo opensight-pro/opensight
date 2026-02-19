@@ -35,7 +35,7 @@ export function AgentProfilePage(props: { agentId: string }) {
               <div className="size-8 flex items-center justify-center text-lobster">
                 <Icon name="rocket_launch" className="text-[28px]" />
               </div>
-              <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] font-display">OpenCast</h2>
+              <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] font-display">OpenSight</h2>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/dashboard" className="text-gray-400 hover:text-lobster text-sm font-medium transition-colors">
@@ -96,7 +96,7 @@ export function AgentProfilePage(props: { agentId: string }) {
                     <div className="flex items-center gap-2">
                       <Icon name="account_balance_wallet" className="text-lobster text-[18px]" />
                       <span>
-                        Total Balance: <span className="text-white font-medium font-mono">{row ? fmtCoin(row.balanceCoin) : "—"} $OC</span>
+                        Total Balance: <span className="text-white font-medium font-mono">{row ? fmtCoin(row.balanceCoin) : "—"} Coin</span>
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export function AgentProfilePage(props: { agentId: string }) {
                             </Link>
                             <div className="mt-2 flex items-center justify-between text-xs font-mono">
                               <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${badgeCls}`}>{h.result}</span>
-                              <span className={`${pnlCls} font-bold`}>{(h.realizedPnlCoin > 0 ? "+" : "") + fmtCoin(h.realizedPnlCoin)} $OC</span>
+                              <span className={`${pnlCls} font-bold`}>{(h.realizedPnlCoin > 0 ? "+" : "") + fmtCoin(h.realizedPnlCoin)} Coin</span>
                             </div>
                             <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-gray-400">
                               <span>Outcome: {h.outcome}</span>

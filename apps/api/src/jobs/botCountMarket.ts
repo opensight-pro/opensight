@@ -63,7 +63,7 @@ async function findActiveBotCountMarket(): Promise<{ id: string; createdAt: Date
 
 /**
  * Create a new bot count prediction market.
- * Market: "How many total bots will MoltMarket have in the next hour?"
+ * Market: "How many total bots will OpenSight have in the next hour?"
  * Resolution: Count of registered agents at market close
  */
 async function createBotCountMarket(houseAgentId: string): Promise<BotCountMarketResult> {
@@ -74,8 +74,8 @@ async function createBotCountMarket(houseAgentId: string): Promise<BotCountMarke
   const nextHour = now.getHours() + 1;
   
   // Create title that includes the hour for clarity
-  const title = `How many total bots will MoltMarket have at ${nextHour}:00?`;
-  const description = `Prediction market on the total number of registered agents in MoltMarket. ` +
+  const title = `How many total bots will OpenSight have at ${nextHour}:00?`;
+  const description = `Prediction market on the total number of registered agents in OpenSight. ` +
     `Current count: ${totalAgents} agents. ` +
     `Market resolves at :59 minutes based on actual registered agent count. ` +
     `YES pays if count increases, NO pays if count decreases or stays same.`;

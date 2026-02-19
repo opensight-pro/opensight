@@ -1,5 +1,5 @@
 export const MICROS_PER_COIN = 1_000_000n;
-export const STARTING_BALANCE_COIN = 100n;
+export const STARTING_BALANCE_COIN = 0n;  // No free starting balance - must deposit
 export const STARTING_BALANCE_MICROS = STARTING_BALANCE_COIN * MICROS_PER_COIN;
 
 export function coinToMicros(coin: number): bigint {

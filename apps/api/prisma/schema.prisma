@@ -28,6 +28,18 @@ enum AccountType {
   HUMAN
 }
 
+enum PaymentDirection {
+  DEPOSIT
+  WITHDRAW
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  SENT
+}
+
 model User {
   id            String    @id @default(uuid())
   createdAt     DateTime  @default(now())
@@ -51,6 +63,7 @@ model User {
   trades        Trade[]
   claimedAgents Agent[]   @relation("ClaimedAgents")
   ownedAgents   Agent[]   @relation("OwnedAgents")  // Demo: agents owned by this user (shared trader account)
+  payments      Payment[]
 }
 
 model Agent {
@@ -191,4 +204,38 @@ model Trade {
   @@index([agentId])
   @@index([userId])
   @@index([marketId])
+}
+
+model Payment {
+  id                String          @id @default(uuid())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  direction         PaymentDirection
+  status            PaymentStatus   @default(PENDING)
+
+  // On-chain metadata (FE-submitted in demo mode)
+  txHash            String?         @unique
+  walletAddress     String          // Normalized lowercase
+
+  // Amounts (integer-safe)
+  bnbAmountWei      BigInt          // BNB in wei (18 decimals)
+  coinAmountMicros  BigInt          // Coin in micros (6 decimals)
+
+  // Idempotency
+  requestId         String          @unique  // UUID
+
+  // Status timestamps
+  confirmedAt       DateTime?
+  failedAt          DateTime?
+  sentAt            DateTime?       // For withdraw: when payout tx sent
+
+  errorMessage      String?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

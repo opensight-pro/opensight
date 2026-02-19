@@ -6,7 +6,7 @@ import { prisma } from "../db.js";
 import { generateApiKey, hashApiKey } from "../auth.js";
 import { STARTING_BALANCE_MICROS, microsToCoinNumber } from "../constants.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://molt.market";
+const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://opensight.markets";
 
 // Nonce storage with expiration
 interface NonceData {
@@ -43,7 +43,7 @@ function isValidEthereumAddress(address: string): boolean {
 
 /**
  * Verify EIP-191 signature
- * Message format: "Sign this message to authenticate with MoltMarket\nNonce: <nonce>"
+ * Message format: "Sign this message to authenticate with OpenSight\nNonce: <nonce>"
  */
 function verifySignature(
   walletAddress: string,
@@ -52,7 +52,7 @@ function verifySignature(
 ): boolean {
   try {
     // Recover address from signature
-    const message = `Sign this message to authenticate with MoltMarket\nNonce: ${nonce}`;
+    const message = `Sign this message to authenticate with OpenSight\nNonce: ${nonce}`;
     const messageHash = crypto
       .createHash("sha256")
       .update(`\x19Ethereum Signed Message:\n${message.length}${message}`)
@@ -136,7 +136,7 @@ export async function registerWeb3AuthRoutes(app: FastifyInstance) {
     return {
       nonceId,
       nonce,
-      message: `Sign this message to authenticate with MoltMarket\nNonce: ${nonce}`
+      message: `Sign this message to authenticate with OpenSight\nNonce: ${nonce}`
     };
   });
 

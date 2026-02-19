@@ -95,7 +95,7 @@ const CustomTooltip: React.FC<{
         </div>
         {data.volume && data.volume > 0 && (
           <div className="font-mono text-xs text-slate-500 mt-1">
-            Vol: {data.volume.toFixed(2)} $OC
+            Vol: {data.volume.toFixed(2)} Coin
           </div>
         )}
       </div>

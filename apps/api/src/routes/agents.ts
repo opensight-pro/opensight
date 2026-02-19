@@ -11,7 +11,7 @@ function generateClaimToken(): string {
   return crypto.randomBytes(16).toString("base64url");
 }
 
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://molt.market";
+const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://opensight.markets";
 
 export async function registerAgentRoutes(app: FastifyInstance) {
   app.post("/agents/register", {

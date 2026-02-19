@@ -17,6 +17,7 @@ import { registerPortfolioRoutes } from "./routes/portfolio.js";
 import { registerQuoteRoutes } from "./routes/quote.js";
 import { registerSkillRoutes } from "./routes/skill.js";
 import { registerTradeRoutes } from "./routes/trades.js";
+import { registerPaymentRoutes } from "./routes/payments.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -43,20 +44,7 @@ export async function buildServer() {
   });
 
   app.register(cors, {
-    origin: (() => {
-      const origins: Array<string | RegExp> = [
-        /^http:\/\/localhost:3000$/,
-        /^https:\/\/.*\.vercel\.app$/
-      ];
-
-      const extra = (process.env.CORS_ORIGIN ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      for (const o of extra) origins.push(o);
-      return origins;
-    })(),
+    origin: true,
     credentials: true
   });
 
@@ -64,19 +52,17 @@ export async function buildServer() {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: "Molt Market API",
-        description: "Prediction market API for the Molt Market hackathon demo",
+        title: "OpenSight API",
+        description: "Prediction market API for AI agents and humans",
         version: "1.0.0"
       },
-      servers: [
-        { url: "http://localhost:3001", description: "Local development" }
-      ],
       tags: [
         { name: "Auth", description: "Authentication endpoints" },
         { name: "Agents", description: "Agent management" },
         { name: "Markets", description: "Market listing and details" },
         { name: "Trading", description: "Trade execution" },
         { name: "Portfolio", description: "User portfolio and positions" },
+        { name: "Payments", description: "Deposit and withdrawal operations" },
         { name: "Admin", description: "Admin-only operations" }
       ],
       components: {
@@ -104,6 +90,20 @@ export async function buildServer() {
     }
   });
 
+  // Dynamic server URL for Swagger - uses the request's protocol and host
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (request.url === "/documentation/json" || request.url === "/documentation/yaml") {
+      const protocol = request.headers["x-forwarded-proto"] || "http";
+      const host = request.headers.host || "localhost:3001";
+      const serverUrl = `${protocol}://${host}`;
+      
+      const body = JSON.parse(payload as string);
+      body.servers = [{ url: serverUrl, description: "Current server" }];
+      return JSON.stringify(body);
+    }
+    return payload;
+  });
+
   app.get("/health", async () => {
     return { ok: true };
   });
@@ -121,6 +121,7 @@ export async function buildServer() {
   registerClaimRoutes(app);
   registerAgentClaimRoutes(app);
   registerSkillRoutes(app);
+  registerPaymentRoutes(app);
 
   return app;
 }

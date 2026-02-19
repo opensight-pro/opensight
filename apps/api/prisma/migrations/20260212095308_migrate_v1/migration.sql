@@ -1,5 +1,5 @@
 -- DropIndex
-DROP INDEX "Agent_ownerUserId_idx";
+DROP INDEX IF EXISTS "Agent_ownerUserId_idx";
 
 -- DropIndex
-DROP INDEX "Market_sourceSlug_idx";
+DROP INDEX IF EXISTS "Market_sourceSlug_idx";

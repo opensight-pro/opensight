@@ -102,7 +102,7 @@ describe("Agent Claim Routes", () => {
       
       expect(body.agentId).toBeDefined();
       expect(body.apiKey).toBeDefined();
-      expect(body.balanceCoin).toBe(100); // Confirmation value
+      expect(body.balanceCoin).toBe(0); // No free starting balance
       expect(body.claimUrl).toBeDefined();
       expect(body.claimUrl).toContain("#/claim/");
     });
@@ -143,7 +143,7 @@ describe("Agent Claim Routes", () => {
       
       expect(body.agentId).toBeDefined();
       expect(body.displayName).toBe("Claimable Agent");
-      expect(body.balanceCoin).toBe(100);
+      expect(body.balanceCoin).toBe(0);
       expect(body.claimed).toBe(false);
       expect(body.claimedBy).toBeNull(); // Legacy field name
     });

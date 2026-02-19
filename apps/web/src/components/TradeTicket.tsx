@@ -6,278 +6,310 @@ import { fmtCoin, fmtPct01 } from "../lib/format";
 import { useSession } from "../state/session";
 import type { Market, TradeResponse } from "../types";
 
-import { Icon } from "./Icon";
-
-export function TradeTicket(props: {
+interface TradeTicketProps {
   market: Market;
   onAfterTrade?: () => void;
   className?: string;
-}) {
+}
+
+export function TradeTicket({ market, onAfterTrade, className }: TradeTicketProps) {
   const session = useSession();
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string>("");
-  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  const [tradeResult, setTradeResult] = React.useState<TradeResponse | null>(null);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [result, setResult] = React.useState<TradeResponse | null>(null);
+  const [pendingRefresh, setPendingRefresh] = React.useState(false);
 
   const [outcome, setOutcome] = React.useState<"YES" | "NO">("YES");
   const [coin, setCoin] = React.useState<number>(10);
 
   const quoteQ = useQuote({
-    marketId: props.market.status === "OPEN" ? props.market.id : null,
+    marketId: market.status === "OPEN" ? market.id : null,
     outcome,
     collateralCoin: coin,
-    enabled: props.market.status === "OPEN"
+    enabled: market.status === "OPEN"
   });
 
   async function onTrade() {
-    if (props.market.status !== "OPEN") return;
+    if (market.status !== "OPEN") return;
     if (!session.apiKey) {
-      setError("Login first.");
+      setError("Please connect your wallet to trade");
       return;
     }
 
     const c = Number.isFinite(coin) ? Math.max(1, Math.floor(coin)) : 0;
     if (c <= 0) {
-      setError("Trade amount must be >= 1 $OC.");
+      setError("Trade amount must be at least 1 Coin");
       return;
     }
 
     setBusy(true);
     setError("");
+    setPendingRefresh(false);
+    
     try {
-      const result = await apiPost<TradeResponse>(
+      const tradeResult = await apiPost<TradeResponse>(
         "/trades",
         {
-          marketId: props.market.id,
+          marketId: market.id,
           outcome,
           collateralCoin: c
         },
         { apiKey: session.apiKey }
       );
-      setTradeResult(result);
-      setShowSuccessModal(true);
-      props.onAfterTrade?.();
+      
+      // Show modal first, delay the refresh
+      setResult(tradeResult);
+      setModalOpen(true);
+      setPendingRefresh(true);
     } catch (e) {
-      setError(e instanceof ApiError ? `${e.message} (status ${e.status})` : e instanceof Error ? e.message : "Trade failed");
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Trade failed");
     } finally {
       setBusy(false);
     }
   }
 
-  function closeModal() {
-    setShowSuccessModal(false);
-    setTradeResult(null);
-  }
+  const closeModal = () => {
+    setModalOpen(false);
+    // Trigger refresh AFTER modal is closed
+    if (pendingRefresh) {
+      setTimeout(() => {
+        onAfterTrade?.();
+        setPendingRefresh(false);
+        setResult(null);
+      }, 300);
+    }
+  };
+
+  const isOpen = market.status === "OPEN";
+  const showModal = modalOpen && result !== null;
 
   return (
     <>
-      <aside className={props.className}>
-        <div className="rounded-sm border border-border-terminal bg-surface-dark overflow-hidden">
-          <div className="px-4 py-3 border-b border-border-terminal bg-panel-dark flex items-center justify-between">
-            <h3 className="font-mono font-bold text-xs uppercase tracking-wider text-slate-200">Trade Ticket</h3>
-            <span className="text-[10px] font-mono text-slate-500">FEE: 1%</span>
+      <div className={`bg-surface rounded-lg border border-border overflow-hidden ${className}`}>
+        {/* Header */}
+        <div className={`px-4 py-3 border-b border-border flex items-center justify-between ${!isOpen ? 'bg-danger/10' : ''}`}>
+          <h3 className={`text-sm font-semibold ${!isOpen ? 'text-danger' : 'text-text-main'}`}>
+            {!isOpen ? '⚠ Trading Closed' : 'Trade'}
+          </h3>
+          {isOpen && <span className="text-xs text-text-secondary">Fee: 1%</span>}
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-danger/10 border border-danger/30 text-danger text-sm rounded">
+              {error}
+            </div>
+          )}
+
+          {/* Outcome Selection */}
+          <div className="space-y-2">
+            <label className="text-xs text-text-secondary uppercase font-medium">Outcome</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setOutcome("YES")}
+                disabled={busy || !isOpen}
+                className={`py-3 px-4 rounded-lg font-semibold text-sm transition-colors ${
+                  outcome === "YES"
+                    ? "bg-success text-bg-main"
+                    : "bg-bg-secondary text-text-secondary hover:text-text-main border border-border"
+                }`}
+              >
+                YES
+              </button>
+              <button
+                onClick={() => setOutcome("NO")}
+                disabled={busy || !isOpen}
+                className={`py-3 px-4 rounded-lg font-semibold text-sm transition-colors ${
+                  outcome === "NO"
+                    ? "bg-danger text-white"
+                    : "bg-bg-secondary text-text-secondary hover:text-text-main border border-border"
+                }`}
+              >
+                NO
+              </button>
+            </div>
           </div>
 
-          <div className="p-4 space-y-4">
-            {error ? <div className="text-red-400 text-xs font-mono">{error}</div> : null}
-
-            {/* {!session.apiKey ? (
-              <div className="space-y-3">
-                <div className="text-text-dim text-xs font-mono">
-                  Initialize an agent to receive <span className="text-white">100 Coin</span> + API key.
-                </div>
-                <button
-                  className="w-full h-9 bg-primary hover:bg-primary-hover transition-colors rounded-sm text-black text-xs font-bold uppercase font-mono tracking-wider"
-                  disabled={busy}
-                  onClick={() => void session.registerAgent()}
-                >
-                  Initialize Agent
-                </button>
-                <input
-                  className="w-full rounded-sm bg-surface-terminal border border-border-terminal text-white placeholder-text-dim focus:border-primary focus:ring-0 text-xs font-mono"
-                  placeholder="paste_x-api-key..."
-                  value={session.apiKey}
-                  onChange={(e) => session.setApiKey(e.target.value)}
-                />
-              </div>
-            ) : null} */}
-
-            <div className="space-y-2">
-              <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Outcome</div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  className={`h-9 rounded-sm border font-mono text-xs font-bold uppercase tracking-wider transition-colors ${
-                    outcome === "YES"
-                      ? "bg-trade-yes/10 border-trade-yes/40 text-trade-yes"
-                      : "bg-surface-terminal border-border-terminal text-text-dim hover:text-white"
-                  }`}
-                  disabled={busy || props.market.status !== "OPEN"}
-                  onClick={() => setOutcome("YES")}
-                  type="button"
-                >
-                  BUY_YES
-                </button>
-                <button
-                  className={`h-9 rounded-sm border font-mono text-xs font-bold uppercase tracking-wider transition-colors ${
-                    outcome === "NO"
-                      ? "bg-trade-no/10 border-trade-no/40 text-trade-no"
-                      : "bg-surface-terminal border-border-terminal text-text-dim hover:text-white"
-                  }`}
-                  disabled={busy || props.market.status !== "OPEN"}
-                  onClick={() => setOutcome("NO")}
-                  type="button"
-                >
-                  BUY_NO
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Amount ($OC)</div>
+          {/* Amount Input */}
+          <div className="space-y-2">
+            <label className="text-xs text-text-secondary uppercase font-medium">Amount (Coin)</label>
+            <div className="relative">
               <input
-                className="w-full rounded-sm bg-surface-terminal border border-border-terminal text-white placeholder-text-dim focus:border-primary focus:ring-0 text-xs font-mono"
                 type="number"
                 min={1}
                 step={1}
                 value={coin}
                 onChange={(e) => setCoin(Number(e.target.value))}
-                disabled={busy || props.market.status !== "OPEN"}
+                disabled={busy || !isOpen}
+                className="w-full px-4 py-3 bg-bg-secondary border border-border rounded-lg text-text-main focus:border-primary focus:outline-none transition-colors font-mono"
+                placeholder="Enter amount"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">C</span>
             </div>
-
-            <div className="rounded-sm border border-border-terminal bg-black/40 p-3">
-              <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-                <span>Quote</span>
-                <span>{quoteQ.loading ? "LOADING" : quoteQ.quote ? "READY" : "—"}</span>
-              </div>
-
-              <div className="mt-3 space-y-2 text-xs font-mono">
-                {quoteQ.error ? <div className="text-red-400">{quoteQ.error}</div> : null}
-                {quoteQ.quote ? (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-text-dim">Est_shares</span>
-                      <span className="text-white">{fmtCoin(quoteQ.quote.sharesOutCoin)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-dim">Fee</span>
-                      <span className="text-white">{fmtCoin(quoteQ.quote.feeCoin)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-dim">YES_px</span>
-                      <span className="text-white">
-                        {fmtPct01(quoteQ.quote.priceYesBefore)} → {fmtPct01(quoteQ.quote.priceYesAfter)}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-text-dim">Quote preview requires an OPEN market.</div>
-                )}
-              </div>
-            </div>
-
-            <button
-              className="w-full h-10 bg-primary hover:bg-primary-hover transition-colors rounded-sm text-black text-xs font-bold uppercase font-mono tracking-wider disabled:opacity-60"
-              disabled={busy || props.market.status !== "OPEN"}
-              onClick={() => void onTrade()}
-            >
-              {busy ? "Executing..." : "Execute Trade"}
-            </button>
           </div>
-        </div>
-      </aside>
 
-      {/* Success Modal */}
-      {showSuccessModal && tradeResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
+          {/* Quote Preview */}
+          <div className="bg-bg-secondary rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-secondary uppercase">Quote</span>
+              <span className="text-text-secondary">
+                {quoteQ.loading ? "Loading…" : quoteQ.quote ? "Ready" : "—"}
+              </span>
+            </div>
+
+            {quoteQ.error && (
+              <div className="text-danger text-sm">{quoteQ.error}</div>
+            )}
+
+            {quoteQ.quote ? (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Est. Shares</span>
+                  <span className="text-text-main font-mono">{fmtCoin(quoteQ.quote.sharesOutCoin)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Fee</span>
+                  <span className="text-danger font-mono">{fmtCoin(quoteQ.quote.feeCoin)} C</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">YES Price</span>
+                  <span className="text-text-main font-mono">
+                    {fmtPct01(quoteQ.quote.priceYesBefore)} → {fmtPct01(quoteQ.quote.priceYesAfter)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className={`text-sm ${!isOpen ? 'text-danger font-medium text-center py-2' : 'text-text-secondary'}`}>
+                {!isOpen ? (
+                  <>
+                    <div className="text-lg mb-1">🏁</div>
+                    <div>This market has been resolved.</div>
+                    <div className="text-xs text-text-secondary mt-1">Positions have been settled.</div>
+                  </>
+                ) : "Enter amount to see quote"}
+              </div>
+            )}
+          </div>
+
+          {/* Trade Button */}
+          <button
+            onClick={() => void onTrade()}
+            disabled={busy || !isOpen}
+            className={`w-full py-3 rounded-lg font-semibold text-sm transition-colors ${
+              !isOpen
+                ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                : outcome === "YES"
+                  ? "bg-success hover:bg-success/90 text-bg-main"
+                  : "bg-danger hover:bg-danger/90 text-white"
+            }`}
+          >
+            {!isOpen ? "Market Resolved" : busy ? "Processing…" : `Buy ${outcome}`}
+          </button>
+
+          {!session.apiKey && (
+            <p className="text-center text-xs text-text-secondary">
+              Connect wallet to trade
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* SUCCESS MODAL - PORTAL TO BODY */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(4px)'
+          }}
+          onClick={closeModal}
+        >
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={closeModal}
-          />
-          
-          {/* Modal */}
-          <div className="relative w-full max-w-md rounded-lg border border-neon-green/40 bg-surface-terminal shadow-2xl">
+            className="w-full max-w-md bg-surface rounded-xl border border-border shadow-2xl"
+            style={{ maxHeight: '90vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-neon-green/20 bg-neon-green/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-success/10">
               <div className="flex items-center gap-2">
-                <Icon name="check_circle" className="text-neon-green text-xl" />
-                <h3 className="text-white font-bold text-sm uppercase tracking-wider font-mono">
-                  Trade Executed
-                </h3>
+                <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-white font-semibold">Trade Executed</h3>
               </div>
               <button
                 onClick={closeModal}
-                className="text-text-dim hover:text-white transition-colors"
+                className="text-text-secondary hover:text-text-main transition-colors"
               >
-                <Icon name="close" className="text-lg" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-5 space-y-4">
-              {/* Trade ID */}
-              <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                <div className="text-[10px] uppercase tracking-widest text-text-dim mb-1">Trade ID</div>
-                <code className="text-xs text-white font-mono break-all">{tradeResult.tradeId}</code>
-              </div>
-
-              {/* Trade Details Grid */}
+            <div className="p-6 space-y-4">
+              {/* Trade Details */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-text-dim mb-1">Outcome</div>
-                  <div className={`text-sm font-bold font-mono ${outcome === "YES" ? "text-trade-yes" : "text-trade-no"}`}>
+                <div className="bg-bg-secondary rounded-lg p-3">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Outcome</p>
+                  <p className={`text-sm font-bold ${outcome === "YES" ? "text-success" : "text-danger"}`}>
                     {outcome}
-                  </div>
+                  </p>
                 </div>
-
-                <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-text-dim mb-1">Amount</div>
-                  <div className="text-sm text-white font-bold font-mono">{fmtCoin(coin)} C</div>
+                <div className="bg-bg-secondary rounded-lg p-3">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Amount</p>
+                  <p className="text-sm font-bold text-text-main">{fmtCoin(coin)} C</p>
                 </div>
-
-                <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-text-dim mb-1">Shares Received</div>
-                  <div className="text-sm text-white font-bold font-mono">{fmtCoin(tradeResult.sharesOutCoin)}</div>
+                <div className="bg-bg-secondary rounded-lg p-3">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Shares</p>
+                  <p className="text-sm font-bold text-text-main">{fmtCoin(result?.sharesOutCoin ?? 0)}</p>
                 </div>
-
-                <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-text-dim mb-1">Fee Paid</div>
-                  <div className="text-sm text-neon-red font-bold font-mono">{fmtCoin(tradeResult.feeCoin)} C</div>
+                <div className="bg-bg-secondary rounded-lg p-3">
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Fee</p>
+                  <p className="text-sm font-bold text-danger">{fmtCoin(result?.feeCoin ?? 0)} C</p>
                 </div>
               </div>
 
               {/* New Balance */}
-              <div className="bg-neon-green/5 border border-neon-green/20 rounded-sm p-3">
+              <div className="bg-success/5 border border-success/20 rounded-lg p-4">
                 <div className="flex justify-between items-center">
-                  <div className="text-[10px] uppercase tracking-widest text-text-dim">New Balance</div>
-                  <div className="text-lg text-neon-green font-bold font-mono">
-                    {fmtCoin(tradeResult.balanceCoin)} <span className="text-sm">C</span>
-                  </div>
+                  <span className="text-text-secondary text-sm">New Balance</span>
+                  <span className="text-xl font-bold text-success font-mono">
+                    {fmtCoin(result?.balanceCoin ?? 0)} C
+                  </span>
                 </div>
               </div>
 
-              {/* Position Update */}
-              <div className="bg-bg-terminal border border-border-terminal rounded-sm p-3">
-                <div className="text-[10px] uppercase tracking-widest text-text-dim mb-2">Position Update</div>
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-text-dim">YES Shares:</span>
-                  <span className="text-white">{fmtCoin(tradeResult.position.yesSharesCoin)}</span>
+              {/* Position */}
+              <div className="bg-bg-secondary rounded-lg p-4">
+                <p className="text-text-tertiary text-xs uppercase mb-2">Position Update</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-text-secondary">YES Shares</span>
+                  <span className="text-text-main font-mono">{fmtCoin(result?.position.yesSharesCoin ?? 0)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-mono mt-1">
-                  <span className="text-text-dim">NO Shares:</span>
-                  <span className="text-white">{fmtCoin(tradeResult.position.noSharesCoin)}</span>
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="text-text-secondary">NO Shares</span>
+                  <span className="text-text-main font-mono">{fmtCoin(result?.position.noSharesCoin ?? 0)}</span>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-border-terminal bg-bg-terminal">
+            <div className="px-6 py-4 border-t border-border bg-bg-secondary">
               <button
                 onClick={closeModal}
-                className="w-full h-10 bg-primary hover:bg-primary-hover transition-colors rounded-sm text-black text-xs font-bold uppercase font-mono tracking-wider"
+                className="w-full py-3 bg-primary hover:bg-primary-hover text-bg-main font-semibold rounded-lg transition-colors"
               >
-                Close
+                Done
               </button>
             </div>
           </div>

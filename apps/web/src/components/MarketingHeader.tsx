@@ -18,7 +18,7 @@ export function MarketingHeader(props: { onRefresh?: () => void; busy?: boolean 
             <Icon name="terminal" className="text-2xl" />
           </div>
           <div className="flex flex-col">
-            <div className="text-white text-xl font-bold leading-tight tracking-tight font-display">OpenCast</div>
+            <div className="text-white text-xl font-bold leading-tight tracking-tight font-display">OpenSight</div>
             <div className="text-text-muted text-[11px] font-mono">API {API_URL}</div>
           </div>
         </Link>

@@ -144,7 +144,7 @@ describe.sequential("Portfolio Routes", () => {
       
       expect(body.accountType).toBe("HUMAN");
       expect(body.userId).toBe(user.id);
-      expect(body.balanceCoin).toBe(100);
+      expect(body.balanceCoin).toBe(100); // User created with 100 coins
       expect(body.totalEquityCoin).toBe(100); // No positions, so equity = balance
       expect(body.positions).toEqual([]);
       expect(body.history).toEqual([]);

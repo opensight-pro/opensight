@@ -56,60 +56,60 @@ function saveLocal(key: string, value: string) {
 }
 
 export function SessionProvider(props: { children: React.ReactNode }) {
-  const [apiKey, setApiKeyState] = React.useState<string>(() => loadLocal("molt.apiKey"));
-  const [agentId, setAgentIdState] = React.useState<string>(() => loadLocal("molt.agentId"));
-  const [userId, setUserIdState] = React.useState<string>(() => loadLocal("molt.userId"));
+  const [apiKey, setApiKeyState] = React.useState<string>(() => loadLocal("opensight.apiKey"));
+  const [agentId, setAgentIdState] = React.useState<string>(() => loadLocal("opensight.agentId"));
+  const [userId, setUserIdState] = React.useState<string>(() => loadLocal("opensight.userId"));
   const [accountType, setAccountTypeState] = React.useState<AccountType | null>(() => {
-    const stored = loadLocal("molt.accountType");
+    const stored = loadLocal("opensight.accountType");
     return stored === "AGENT" || stored === "HUMAN" ? stored : null;
   });
-  const [xHandle, setXHandleState] = React.useState<string>(() => loadLocal("molt.xHandle"));
-  const [xName, setXNameState] = React.useState<string>(() => loadLocal("molt.xName"));
-  const [xAvatar, setXAvatarState] = React.useState<string>(() => loadLocal("molt.xAvatar"));
-  const [walletAddress, setWalletAddressState] = React.useState<string>(() => loadLocal("molt.walletAddress"));
+  const [xHandle, setXHandleState] = React.useState<string>(() => loadLocal("opensight.xHandle"));
+  const [xName, setXNameState] = React.useState<string>(() => loadLocal("opensight.xName"));
+  const [xAvatar, setXAvatarState] = React.useState<string>(() => loadLocal("opensight.xAvatar"));
+  const [walletAddress, setWalletAddressState] = React.useState<string>(() => loadLocal("opensight.walletAddress"));
   const [adminToken, setAdminToken] = React.useState<string>("");
 
   const setApiKey = React.useCallback((v: string) => {
     const next = v.trim();
     setApiKeyState(next);
-    saveLocal("molt.apiKey", next);
+    saveLocal("opensight.apiKey", next);
   }, []);
 
   const setAgentId = React.useCallback((v: string) => {
     const next = v.trim();
     setAgentIdState(next);
-    saveLocal("molt.agentId", next);
+    saveLocal("opensight.agentId", next);
   }, []);
 
   const setUserId = React.useCallback((v: string) => {
     const next = v.trim();
     setUserIdState(next);
-    saveLocal("molt.userId", next);
+    saveLocal("opensight.userId", next);
   }, []);
 
   const setAccountType = React.useCallback((v: AccountType | null) => {
     setAccountTypeState(v);
-    saveLocal("molt.accountType", v ?? "");
+    saveLocal("opensight.accountType", v ?? "");
   }, []);
 
   const setXHandle = React.useCallback((v: string) => {
     setXHandleState(v);
-    saveLocal("molt.xHandle", v);
+    saveLocal("opensight.xHandle", v);
   }, []);
 
   const setXName = React.useCallback((v: string) => {
     setXNameState(v);
-    saveLocal("molt.xName", v);
+    saveLocal("opensight.xName", v);
   }, []);
 
   const setXAvatar = React.useCallback((v: string) => {
     setXAvatarState(v);
-    saveLocal("molt.xAvatar", v);
+    saveLocal("opensight.xAvatar", v);
   }, []);
 
   const setWalletAddress = React.useCallback((v: string) => {
     setWalletAddressState(v);
-    saveLocal("molt.walletAddress", v);
+    saveLocal("opensight.walletAddress", v);
   }, []);
 
   const disconnect = React.useCallback(() => {

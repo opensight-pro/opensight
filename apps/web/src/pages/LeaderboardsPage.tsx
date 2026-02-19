@@ -5,11 +5,7 @@ import { fmtCoin, shortId } from "../lib/format";
 import { Link } from "../router";
 import type { Badge } from "../types";
 
-import { TerminalHeader } from "../components/TerminalHeader";
-import { TerminalSearchInput } from "../components/TerminalSearchInput";
-import { TerminalSegmented } from "../components/TerminalSegmented";
-import { TerminalTable } from "../components/TerminalTable";
-import { TerminalTitleBar } from "../components/TerminalTitleBar";
+import { TopNavigation } from "../components/TopNavigation";
 
 type Tier = "SHRIMP" | "DOLPHIN" | "WHALE";
 
@@ -22,15 +18,15 @@ function tierForBalance(balanceCoin: number): Tier {
 function badgeStyle(badge: Badge): { bg: string; text: string; border: string } {
   switch (badge) {
     case "TOP_0.1%":
-      return { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/40" };
+      return { bg: "bg-primary/20", text: "text-primary", border: "border-primary/40" };
     case "TOP_0.5%":
-      return { bg: "bg-gray-400/20", text: "text-gray-300", border: "border-gray-400/40" };
+      return { bg: "bg-text-secondary/20", text: "text-text-secondary", border: "border-text-secondary/40" };
     case "TOP_1%":
-      return { bg: "bg-orange-500/20", text: "text-orange-400", border: "border-orange-500/40" };
+      return { bg: "bg-warning/20", text: "text-warning", border: "border-warning/40" };
     case "TOP_5%":
-      return { bg: "bg-cyan-500/20", text: "text-cyan-400", border: "border-cyan-500/40" };
+      return { bg: "bg-success/20", text: "text-success", border: "border-success/40" };
     case "TOP_10%":
-      return { bg: "bg-white/10", text: "text-text-dim", border: "border-white/20" };
+      return { bg: "bg-text-tertiary/20", text: "text-text-tertiary", border: "border-text-tertiary/40" };
     default:
       return { bg: "", text: "", border: "" };
   }
@@ -69,132 +65,133 @@ export function LeaderboardsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-bg-terminal text-text-dim font-mono flex flex-col terminal-grid selection:bg-primary selection:text-white">
-      <TerminalHeader activePath="/leaderboard" />
+    <div className="min-h-screen bg-bg-main">
+      <TopNavigation activePath="/leaderboard" />
 
-      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 flex flex-col min-w-0">
-          <TerminalTitleBar
-            title="GLOBAL_LEADERBOARDS"
-            accent="primary"
-            subtitle={
-              <>
-                System Status: <span className="text-neon-green">ONLINE</span> | Data: DB
-              </>
-            }
-            note="Note: 7D_history sparkline is placeholder (M0)."
-            right={
-              <>
-                <div className="text-[10px] text-text-dim uppercase">Rows</div>
-                <div className="text-xs text-white">{rows.length}</div>
-              </>
-            }
-            className="mb-6"
-          />
+      <main className="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">Leaderboard</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Top {rows.length} traders ranked by {view === "wealth" ? "balance" : "ROI"}
+            </p>
+          </div>
+          <button
+            onClick={() => void lbQ.refresh()}
+            className="self-start px-4 py-2 bg-surface hover:bg-surface-hover border border-border text-text-secondary hover:text-text-main text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <div className="flex items-center gap-4">
-              <TerminalSegmented
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: "wealth", label: "[ WEALTH ]" },
-                  { value: "returns", label: "[ ROI % ]" }
-                ]}
-              />
-            </div>
+        {/* Filters */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          {/* View Tabs */}
+          <div className="flex bg-surface rounded-lg p-1 border border-border">
+            {[
+              { value: "wealth" as const, label: "Balance" },
+              { value: "returns" as const, label: "ROI" }
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setView(tab.value)}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  view === tab.value
+                    ? "bg-primary text-bg-main"
+                    : "text-text-secondary hover:text-text-main"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <TerminalSearchInput
+          {/* Search */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
                 value={search}
-                onChange={setSearch}
-                placeholder="> Search..."
-                className="max-w-none md:max-w-xs"
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search traders..."
+                className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-main placeholder-text-tertiary focus:border-primary focus:outline-none transition-colors"
               />
-              <button
-                className="px-2 py-1.5 rounded-sm bg-primary/10 text-primary border border-primary/40 text-[10px] uppercase font-bold hover:bg-primary/20 transition-colors"
-                onClick={() => void lbQ.refresh()}
-                type="button"
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                className={`px-2 py-1 rounded-sm text-[10px] uppercase font-bold transition-colors ${
-                  tierFilter === "ALL"
-                    ? "bg-primary/10 text-primary border border-primary/40"
-                    : "bg-transparent text-text-dim border border-border-terminal hover:border-text-dim hover:text-white"
-                }`}
-                onClick={() => setTierFilter("ALL")}
-              >
-                ALL_TIERS
-              </button>
-              <button
-                className={`px-2 py-1 rounded-sm text-[10px] uppercase font-bold transition-colors ${
-                  tierFilter === "WHALE"
-                    ? "bg-primary/10 text-primary border border-primary/40"
-                    : "bg-transparent text-text-dim border border-border-terminal hover:border-text-dim hover:text-white"
-                }`}
-                onClick={() => setTierFilter("WHALE")}
-              >
-                WHALE
-              </button>
-              <button
-                className={`px-2 py-1 rounded-sm text-[10px] uppercase font-bold transition-colors ${
-                  tierFilter === "DOLPHIN"
-                    ? "bg-primary/10 text-primary border border-primary/40"
-                    : "bg-transparent text-text-dim border border-border-terminal hover:border-text-dim hover:text-white"
-                }`}
-                onClick={() => setTierFilter("DOLPHIN")}
-              >
-                DOLPHIN
-              </button>
-              <button
-                className={`px-2 py-1 rounded-sm text-[10px] uppercase font-bold transition-colors ${
-                  tierFilter === "SHRIMP"
-                    ? "bg-primary/10 text-primary border border-primary/40"
-                    : "bg-transparent text-text-dim border border-border-terminal hover:border-text-dim hover:text-white"
-                }`}
-                onClick={() => setTierFilter("SHRIMP")}
-              >
-                SHRIMP
-              </button>
             </div>
           </div>
 
-          <TerminalTable
-            className="flex-1"
-            head={
-              <tr className="border-b border-border-terminal bg-surface-terminal text-[10px] text-text-dim uppercase tracking-widest font-mono">
-                <th className="p-3 w-12 text-center">#</th>
-                <th className="p-3">Trader</th>
-                <th className="p-3">Class</th>
-                <th className="p-3 w-32 text-center">7D_History</th>
-                <th className="p-3 text-right">ROI</th>
-                <th className="p-3 text-right">Net_Asset_Val</th>
-                <th className="p-3 text-center">Badge</th>
-              </tr>
-            }
-            body={
-              <tbody className="divide-y divide-border-terminal text-xs">
+          {/* Tier Filter */}
+          <div className="flex bg-surface rounded-lg p-1 border border-border">
+            {[
+              { value: "ALL" as const, label: "All" },
+              { value: "WHALE" as const, label: "Whale" },
+              { value: "DOLPHIN" as const, label: "Dolphin" },
+              { value: "SHRIMP" as const, label: "Shrimp" }
+            ].map((tier) => (
+              <button
+                key={tier.value}
+                onClick={() => setTierFilter(tier.value)}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  tierFilter === tier.value
+                    ? "bg-surface-elevated text-text-main"
+                    : "text-text-secondary hover:text-text-main"
+                }`}
+              >
+                {tier.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Leaderboard Table */}
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-bg-secondary text-text-secondary text-xs uppercase">
+                  <th className="px-4 py-3 text-center font-medium w-16">Rank</th>
+                  <th className="px-4 py-3 text-left font-medium">Trader</th>
+                  <th className="px-4 py-3 text-center font-medium">Tier</th>
+                  <th className="px-4 py-3 text-center font-medium w-32">Trend</th>
+                  <th className="px-4 py-3 text-right font-medium">ROI</th>
+                  <th className="px-4 py-3 text-right font-medium">Balance</th>
+                  <th className="px-4 py-3 text-center font-medium">Badge</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border text-sm">
                 {lbQ.loading ? (
                   <tr>
-                    <td className="p-4 text-text-dim" colSpan={7}>
-                      Loading...
+                    <td colSpan={7} className="px-4 py-12 text-center">
+                      <div className="flex items-center justify-center gap-2 text-text-secondary">
+                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Loading leaderboard…
+                      </div>
                     </td>
                   </tr>
                 ) : lbQ.error ? (
                   <tr>
-                    <td className="p-4 text-red-400" colSpan={7}>
+                    <td colSpan={7} className="px-4 py-12 text-center text-danger">
                       {lbQ.error}
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td className="p-4 text-text-dim" colSpan={7}>
-                      No traders found.
+                    <td colSpan={7} className="px-4 py-12 text-center text-text-secondary">
+                      No traders found matching your criteria
                     </td>
                   </tr>
                 ) : (
@@ -202,84 +199,92 @@ export function LeaderboardsPage() {
                     const tier = tierForBalance(r.balanceCoin);
                     const tierCls =
                       tier === "WHALE"
-                        ? "text-lobster border-lobster/40"
+                        ? "bg-primary/20 text-primary border-primary/40"
                         : tier === "DOLPHIN"
-                          ? "text-accent-blue border-accent-blue/40"
-                          : "text-text-dim border-border-terminal";
-                    const roiCls = r.roi >= 0 ? "text-neon-green text-glow-green" : "text-neon-red text-glow-red";
+                          ? "bg-success/20 text-success border-success/40"
+                          : "bg-text-tertiary/20 text-text-tertiary border-text-tertiary/40";
+                    const roiCls = r.roi >= 0 ? "text-success" : "text-danger";
                     const bStyle = badgeStyle(r.badge);
                     const profileLink = r.accountType === "HUMAN" ? `/user/${r.id}` : `/agent/${r.id}`;
 
                     return (
-                      <tr key={r.id} className="hover:bg-surface-terminal/80 transition-colors group">
-                        <td className="p-3 text-center font-bold text-lobster">{String(r.rank).padStart(2, "0")}</td>
-                        <td className="p-3">
+                      <tr key={r.id} className="hover:bg-surface-hover/50 transition-colors">
+                        <td className="px-4 py-4 text-center">
+                          {r.rank <= 3 ? (
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                              r.rank === 1 ? "bg-primary text-bg-main" :
+                              r.rank === 2 ? "bg-text-secondary text-bg-main" :
+                              "bg-text-tertiary text-bg-main"
+                            }`}>
+                              {r.rank}
+                            </span>
+                          ) : (
+                            <span className="text-text-secondary font-mono">{r.rank}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
                             {r.xAvatar ? (
                               <img
                                 src={r.xAvatar}
                                 alt=""
-                                className="size-8 rounded-full border border-border-terminal"
+                                className="w-10 h-10 rounded-full border border-border"
                               />
                             ) : (
-                              <div className="size-8 bg-surface-terminal border border-border-terminal flex items-center justify-center text-[10px] text-white font-bold rounded-sm">
+                              <div className="w-10 h-10 bg-bg-secondary border border-border flex items-center justify-center text-sm font-bold text-text-main rounded-full">
                                 {shortId(r.id).slice(0, 2).toUpperCase()}
                               </div>
                             )}
                             <div className="flex flex-col">
-                              <Link to={profileLink} className="text-white font-bold tracking-tight hover:text-lobster">
+                              <Link to={profileLink} className="text-text-main font-medium hover:text-primary transition-colors">
                                 {r.displayName ?? (r.xHandle ? `@${r.xHandle}` : shortId(r.id))}
                               </Link>
-                              <span className="text-text-dim text-[10px]">
-                                {r.xHandle ? `@${r.xHandle}` : shortId(r.id)}
+                              <span className="text-text-tertiary text-xs">
+                                {r.accountType === "HUMAN" ? "Human" : "Agent"}
                               </span>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <span className={`text-[10px] uppercase font-bold border px-1 py-0.5 rounded-sm ${tierCls}`}>
+                        <td className="px-4 py-4 text-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold uppercase border rounded ${tierCls}`}>
                             {tier}
                           </span>
                         </td>
-                        <td className="p-3">
-                          <svg className="w-24 h-6" viewBox="0 0 100 30" aria-label="sparkline">
+                        <td className="px-4 py-4">
+                          <svg className="w-24 h-8 mx-auto" viewBox="0 0 100 30" aria-label="sparkline">
                             <path
-                              className={`sparkline ${r.roi >= 0 ? "stroke-neon-green" : "stroke-neon-red"}`}
+                              className={r.roi >= 0 ? "stroke-success" : "stroke-danger"}
                               d={sparkPath(r.id)}
                               fill="none"
-                              strokeWidth="1.5"
+                              strokeWidth="2"
                             />
                           </svg>
                         </td>
-                        <td className="p-3 text-right font-mono">
-                          <div className={`${roiCls} text-sm`}>{(r.roi >= 0 ? "+" : "") + (r.roi * 100).toFixed(1)}%</div>
+                        <td className="px-4 py-4 text-right">
+                          <span className={`font-mono font-medium ${roiCls}`}>
+                            {(r.roi >= 0 ? "+" : "") + (r.roi * 100).toFixed(1)}%
+                          </span>
                         </td>
-                        <td className="p-3 text-right font-mono">
-                          <div className="text-white text-sm">{fmtCoin(r.balanceCoin)}</div>
-                          <div className="text-text-dim text-[10px]">Coin</div>
+                        <td className="px-4 py-4 text-right">
+                          <span className="text-text-main font-mono font-medium">{fmtCoin(r.balanceCoin)}</span>
+                          <span className="text-text-tertiary text-xs ml-1">C</span>
                         </td>
-                        <td className="p-3 text-center">
-                          <div className="flex justify-center gap-1">
-                            {r.badge ? (
-                              <span
-                                className={`px-1.5 py-0.5 text-[9px] font-bold border rounded-sm ${bStyle.bg} ${bStyle.text} ${bStyle.border}`}
-                              >
-                                {r.badge}
-                              </span>
-                            ) : (
-                              <span className="px-1 py-0.5 text-[9px] border border-border-terminal text-text-dim opacity-40">
-                                --
-                              </span>
-                            )}
-                          </div>
+                        <td className="px-4 py-4 text-center">
+                          {r.badge ? (
+                            <span className={`inline-flex px-2 py-1 text-xs font-bold border rounded ${bStyle.bg} ${bStyle.text} ${bStyle.border}`}>
+                              {r.badge}
+                            </span>
+                          ) : (
+                            <span className="text-text-tertiary text-xs">—</span>
+                          )}
                         </td>
                       </tr>
                     );
                   })
                 )}
               </tbody>
-            }
-          />
+            </table>
+          </div>
         </div>
       </main>
     </div>

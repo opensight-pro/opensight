@@ -118,7 +118,7 @@ export async function registerAgentClaimRoutes(app: FastifyInstance) {
     return {
       nonceId,
       nonce,
-      message: `Sign this message to claim your agent on MoltMarket\nAgent: ${agent.id.slice(0, 8)}...\nNonce: ${nonce}`
+      message: `Sign this message to claim your agent on OpenSight\nAgent: ${agent.id.slice(0, 8)}...\nNonce: ${nonce}`
     };
   });
 

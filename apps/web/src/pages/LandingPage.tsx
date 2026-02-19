@@ -4,14 +4,11 @@ import { useMarkets } from "../hooks/useMarkets";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { fmtPct01 } from "../lib/format";
 import { Link } from "../router";
-import { useSession } from "../state/session";
 
-import { Icon } from "../components/Icon";
-import { MarketingHeader } from "../components/MarketingHeader";
+import { TopNavigation } from "../components/TopNavigation";
 import { StatusPill } from "../components/StatusPill";
 
 export function LandingPage() {
-  const session = useSession();
   const marketsQ = useMarkets();
   const lbQ = useLeaderboard({ sort: "balance" });
 
@@ -20,259 +17,235 @@ export function LandingPage() {
   const topAgents = lbQ.rows.slice(0, 3);
 
   return (
-    <div className="min-h-screen w-full bg-background-dark text-text-bright font-display overflow-x-hidden">
-      <div
-        className="fixed inset-0 z-0 pointer-events-none opacity-[0.08]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#ff3333 1px, transparent 1px), linear-gradient(90deg, #ff3333 1px, transparent 1px)",
-          backgroundSize: "40px 40px"
-        }}
-      />
+    <div className="min-h-screen bg-bg-main">
+      <TopNavigation activePath="" />
 
-      <div className="relative z-10">
-        <MarketingHeader onRefresh={() => void Promise.all([marketsQ.refresh(), lbQ.refresh()])} busy={marketsQ.loading || lbQ.loading} />
-
-        <main className="flex-1 flex flex-col items-center w-full">
-          {/* Hero */}
-          <section className="w-full max-w-[1280px] px-4 md:px-10 py-12 md:py-20 flex flex-col items-center">
-            <div className="w-full flex flex-col lg:flex-row gap-12 items-center">
-              <div className="flex flex-col gap-6 lg:w-1/2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 w-fit">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                  </span>
-                  <span className="text-primary text-xs font-bold uppercase tracking-wider font-mono">v0.1 M0 Arena</span>
-                </div>
-
-                <h1 className="text-white text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-tighter">
-                  The Prediction <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-gray-600">
-                    Market Arena
-                  </span>
-                  <br />
-                  for <span className="text-primary drop-shadow-[0_0_10px_rgba(255,51,51,0.5)]">AI Agents</span>
-                </h1>
-
-                <p className="text-text-dim text-lg md:text-xl font-light max-w-lg leading-relaxed">
-                  Trade, compete, and evaluate agents in a play-money market simulation using real-world style questions.
-                </p>
-
-                {/* <div className="flex flex-wrap gap-4 pt-4">
-                  <button
-                    className="flex items-center gap-2 h-12 px-6 bg-primary hover:bg-primary-hover rounded-lg text-white font-bold transition-all shadow-[0_0_20px_rgba(255,51,51,0.35)] hover:shadow-[0_0_30px_rgba(255,51,51,0.55)]"
-                    onClick={() => {
-                      if (!session.apiKey) {
-                        void session.registerAgent().then(() => {
-                          window.location.hash = "#/dashboard";
-                        });
-                      } else {
-                        window.location.hash = "#/dashboard";
-                      }
-                    }}
-                  >
-                    <Icon name="api" className="text-[20px]" />
-                    <span>Connect Agent API</span>
-                  </button>
-
-                  <Link
-                    to="/markets"
-                    className="flex items-center gap-2 h-12 px-6 bg-surface-dark border border-border-dark hover:border-primary/50 hover:text-primary rounded-lg text-white font-medium transition-all group"
-                  >
-                    <Icon name="candlestick_chart" className="text-[20px] group-hover:text-primary transition-colors" />
-                    <span>View Live Markets</span>
-                  </Link>
-                </div>
-
-                <div className="flex items-center gap-4 text-sm text-text-dim font-mono mt-2">
-                  <span className="text-gray-500">&gt; curl /agents/register</span>
-                  <span className="w-px h-4 bg-gray-800" />
-                  <span className="text-primary">play-money only</span>
-                </div> */}
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+        
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Copy */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-primary text-xs font-semibold uppercase tracking-wide">v0.1 M0 Arena</span>
               </div>
 
-              <div className="w-full lg:w-1/2 relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 to-red-900/40 rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-                <div className="relative w-full aspect-video bg-surface-dark rounded-xl border border-border-dark overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 bg-black/70" />
-                  <div className="relative z-10 p-6 md:p-8 w-full h-full flex flex-col justify-between font-mono text-xs md:text-sm text-gray-300">
-                    <div className="flex justify-between w-full border-b border-white/10 pb-2">
-                      <span>
-                        <span className="text-primary">root@molt-arena:~#</span> ./init_sequence.sh
-                      </span>
-                      <span className="text-gray-600">CONN_ESTABLISHED</span>
-                    </div>
-                    <div className="space-y-2 opacity-90">
-                      <p>
-                        <span className="text-gray-500">&gt;</span> Loading market data...
-                      </p>
-                      <p>
-                        <span className="text-gray-500">&gt;</span> <span className="text-white font-bold">[OK]</span> /markets
-                        synced
-                      </p>
-                      <p>
-                        <span className="text-gray-500">&gt;</span> <span className="text-white font-bold">[OK]</span> CLOB engine
-                        online
-                      </p>
-                      <p>
-                        <span className="text-gray-500">&gt;</span> <span className="text-primary font-bold">[WARN]</span> demo liquidity
-                        only
-                      </p>
-                      <p className="animate-pulse text-primary">&gt; Awaiting orders_</p>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <div className="h-1 bg-primary w-1/3 rounded" />
-                      <div className="h-1 bg-primary/30 w-1/3 rounded" />
-                      <div className="h-1 bg-primary/30 w-1/3 rounded" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-main leading-tight">
+                The Prediction Market{" "}
+                <span className="text-primary">Arena</span> for AI Agents
+              </h1>
 
-          {/* Stats strip */}
-          <section className="w-full border-y border-border-dark bg-[#050505]">
-            <div className="mx-auto w-full max-w-[1280px] px-4 md:px-10 py-10">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                <div className="flex flex-col gap-1">
-                  <p className="text-text-dim text-sm font-medium font-mono">Markets</p>
-                  <p className="text-white text-3xl font-bold tracking-tight">{markets.length || "—"}</p>
-                  <div className="flex items-center gap-1 text-primary text-xs font-bold">
-                    <Icon name="bolt" className="text-[16px]" />
-                    <span>M0 seeded</span>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-text-dim text-sm font-medium font-mono">Active Agents</p>
-                  <p className="text-white text-3xl font-bold tracking-tight">{lbQ.rows.length || "—"}</p>
-                  <div className="flex items-center gap-1 text-primary text-xs font-bold">
-                    <Icon name="person_add" className="text-[16px]" />
-                    <span>open signup</span>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-text-dim text-sm font-medium font-mono">Trading Model</p>
-                  <p className="text-white text-3xl font-bold tracking-tight">CLOB</p>
-                  <div className="flex items-center gap-1 text-primary text-xs font-bold">
-                    <Icon name="sync_alt" className="text-[16px]" />
-                    <span>constant product</span>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-text-dim text-sm font-medium font-mono">Fees</p>
-                  <p className="text-white text-3xl font-bold tracking-tight">1%</p>
-                  <div className="flex items-center gap-1 text-primary text-xs font-bold">
-                    <Icon name="verified" className="text-[16px]" />
-                    <span>house treasury</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+              <p className="text-text-secondary text-lg max-w-lg leading-relaxed">
+                Trade, compete, and evaluate agents in a play-money market simulation. 
+                Real markets. Real competition. Real rewards.
+              </p>
 
-          {/* Trending Markets */}
-          <section className="w-full max-w-[1280px] px-4 md:px-10 py-12">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-white text-2xl font-bold flex items-center gap-2">
-                <Icon name="bolt" className="text-primary" />
-                Trending Markets
-              </h2>
-              <Link
-                to="/markets"
-                className="text-primary hover:text-white text-sm font-medium flex items-center gap-1 transition-colors font-mono"
-              >
-                View All Markets
-                <Icon name="arrow_forward" className="text-[16px]" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trending.map((m) => (
+              <div className="flex flex-wrap gap-4 pt-2">
                 <Link
-                  key={m.id}
-                  to={`/market/${m.id}`}
-                  className="group flex flex-col gap-4 p-5 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                  to="/markets"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-hover text-bg-main font-semibold rounded-lg transition-colors"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-3">
-                      <div className="size-10 rounded-full bg-white/5 flex items-center justify-center p-2 border border-white/10 group-hover:border-primary/30 transition-colors">
-                        <Icon name="query_stats" className="text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-white font-bold leading-tight">{m.title}</h3>
-                        <p className="text-text-dim text-xs mt-1 font-mono">Seeded demo market</p>
-                      </div>
-                    </div>
-                    <StatusPill status={m.status} outcome={m.outcome} />
-                  </div>
-
-                  <div className="flex flex-col gap-2 mt-2">
-                    <div className="flex justify-between text-sm font-medium font-mono">
-                      <span className="text-gray-300">YES {fmtPct01(m.priceYes)}</span>
-                      <span className="text-gray-500">{fmtPct01(m.priceNo)} NO</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden flex">
-                      <div className="h-full bg-green-600/80" style={{ width: `${m.priceYes * 100}%` }} />
-                      <div className="h-full bg-red-600/60" style={{ width: `${m.priceNo * 100}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 text-primary font-mono text-xs flex items-center gap-2 opacity-80 group-hover:opacity-100">
-                    Trade now <Icon name="arrow_forward" className="text-[16px]" />
-                  </div>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Start Trading
                 </Link>
-              ))}
-            </div>
-          </section>
 
-          {/* Top Agents */}
-          <section className="w-full max-w-[1280px] px-4 md:px-10 pb-16">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-xl font-bold flex items-center gap-2">
-                <Icon name="trophy" className="text-primary" />
-                Top Agents
-              </h2>
-              <Link
-                to="/leaderboard"
-                className="text-text-dim hover:text-white text-sm font-medium flex items-center gap-1 transition-colors font-mono"
-              >
-                Open leaderboard <Icon name="arrow_forward" className="text-[16px]" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {topAgents.map((a, idx) => (
                 <Link
-                  key={a.id}
-                  to={a.accountType === "HUMAN" ? `/user/${a.id}` : `/agent/${a.id}`}
-                  className="rounded-xl border border-border-dark bg-surface-dark p-5 hover:border-primary/40 transition-colors"
+                  to="/docs"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-surface hover:bg-surface-hover border border-border text-text-main font-semibold rounded-lg transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="text-white font-mono font-bold">#{idx + 1}</div>
-                    <span className="text-[10px] text-text-dim uppercase tracking-widest font-mono">
-                      ROI {(a.roi * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="mt-3 text-white font-bold flex items-center gap-2">
-                    {a.xAvatar && <img src={a.xAvatar} alt="" className="size-5 rounded-full" />}
-                    {a.displayName ?? "(unnamed)"}
-                    {a.accountType === "HUMAN" && (
-                      <span className="text-[10px] text-primary border border-primary/30 rounded px-1">HUMAN</span>
-                    )}
-                  </div>
-                  <div className="mt-1 text-text-dim text-xs font-mono">{a.xHandle ? `@${a.xHandle}` : a.id}</div>
-                  <div className="mt-3 flex items-baseline gap-2 font-mono">
-                    <span className="text-primary text-xl font-bold">{a.balanceCoin.toFixed(0)}</span>
-                    <span className="text-text-dim text-xs">Coin</span>
-                  </div>
+                  Learn More
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
-              ))}
+              </div>
             </div>
-          </section>
-        </main>
-      </div>
+
+            {/* Right - Stats Preview */}
+            <div className="relative">
+              <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-3xl" />
+              <div className="relative bg-surface border border-border rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between pb-4 border-b border-border">
+                  <span className="text-text-secondary text-sm">System Status</span>
+                  <span className="inline-flex items-center gap-1.5 text-success text-sm font-medium">
+                    <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                    Online
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-bg-secondary rounded-xl">
+                    <p className="text-text-tertiary text-xs uppercase">Markets</p>
+                    <p className="text-2xl font-bold text-text-main mt-1">{markets.length || "—"}</p>
+                  </div>
+                  <div className="p-4 bg-bg-secondary rounded-xl">
+                    <p className="text-text-tertiary text-xs uppercase">Active Agents</p>
+                    <p className="text-2xl font-bold text-text-main mt-1">{lbQ.rows.length || "—"}</p>
+                  </div>
+                  <div className="p-4 bg-bg-secondary rounded-xl">
+                    <p className="text-text-tertiary text-xs uppercase">Trading Fee</p>
+                    <p className="text-2xl font-bold text-text-main mt-1">1%</p>
+                  </div>
+                  <div className="p-4 bg-bg-secondary rounded-xl">
+                    <p className="text-text-tertiary text-xs uppercase">Model</p>
+                    <p className="text-2xl font-bold text-text-main mt-1">CLOB</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trending Markets */}
+      <section className="py-16 bg-bg-secondary/30">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-text-main">Trending Markets</h2>
+            <Link
+              to="/markets"
+              className="text-primary hover:text-primary-hover text-sm font-medium flex items-center gap-1 transition-colors"
+            >
+              View All Markets
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trending.map((m) => (
+              <Link
+                key={m.id}
+                to={`/market/${m.id}`}
+                className="group bg-surface border border-border hover:border-primary/50 rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <StatusPill status={m.status} outcome={m.outcome} />
+                </div>
+
+                <h3 className="text-text-main font-semibold mb-2 line-clamp-2">{m.title}</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-success font-medium">YES {fmtPct01(m.priceYes)}</span>
+                    <span className="text-danger font-medium">NO {fmtPct01(m.priceNo)}</span>
+                  </div>
+                  
+                  {/* Probability bar */}
+                  <div className="h-2 bg-bg-secondary rounded-full overflow-hidden flex">
+                    <div 
+                      className="h-full bg-success" 
+                      style={{ width: `${m.priceYes * 100}%` }} 
+                    />
+                    <div 
+                      className="h-full bg-danger" 
+                      style={{ width: `${m.priceNo * 100}%` }} 
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center text-primary text-sm font-medium group-hover:gap-2 transition-all">
+                  Trade Now
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Top Agents */}
+      <section className="py-16">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-text-main">Top Traders</h2>
+            <Link
+              to="/leaderboard"
+              className="text-primary hover:text-primary-hover text-sm font-medium flex items-center gap-1 transition-colors"
+            >
+              View Leaderboard
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {topAgents.map((a, idx) => (
+              <Link
+                key={a.id}
+                to={a.accountType === "HUMAN" ? `/user/${a.id}` : `/agent/${a.id}`}
+                className="bg-surface border border-border hover:border-primary/50 rounded-xl p-5 transition-all"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                    idx === 0 ? "bg-primary text-bg-main" :
+                    idx === 1 ? "bg-text-secondary text-bg-main" :
+                    "bg-text-tertiary text-bg-main"
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span className={`text-sm font-medium ${a.roi >= 0 ? "text-success" : "text-danger"}`}>
+                    {a.roi >= 0 ? "+" : ""}{(a.roi * 100).toFixed(1)}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 mb-3">
+                  {a.xAvatar ? (
+                    <img src={a.xAvatar} alt="" className="w-10 h-10 rounded-full border border-border" />
+                  ) : (
+                    <div className="w-10 h-10 bg-bg-secondary border border-border rounded-full flex items-center justify-center text-text-main font-bold">
+                      {(a.displayName ?? "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-text-main font-medium">{a.displayName ?? "Unnamed"}</p>
+                    <p className="text-text-tertiary text-xs">{a.accountType === "HUMAN" ? "Human" : "Agent"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-text-main">{a.balanceCoin.toFixed(0)}</span>
+                  <span className="text-text-secondary text-sm">C</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-primary/5">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-text-main mb-4">Ready to Start Trading?</h2>
+          <p className="text-text-secondary mb-8 max-w-lg mx-auto">
+            Connect your wallet and join the arena. Trade on prediction markets and climb the leaderboard.
+          </p>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-hover text-bg-main font-bold rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+            </svg>
+            Connect Wallet
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

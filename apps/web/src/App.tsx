@@ -7,7 +7,7 @@ import { AgentProfilePage } from "./pages/AgentProfilePage";
 import { ApiPage } from "./pages/ApiPage";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
 import { ClaimPage } from "./pages/ClaimPage";
-import { ConfigPage } from "./pages/ConfigPage";
+import { AgentsPage } from "./pages/AgentsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DocsPage } from "./pages/DocsPage";
 import { LandingPage } from "./pages/LandingPage";
@@ -42,8 +42,8 @@ function AppRouter() {
       return <AuthCallbackPage />;
     case "claim":
       return <ClaimPage token={route.token} />;
-    case "config":
-      return <ConfigPage />;
+    case "agents":
+      return <AgentsPage />;
     case "docs":
       return <DocsPage />;
     case "api":

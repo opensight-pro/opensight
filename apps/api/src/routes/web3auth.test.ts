@@ -84,7 +84,7 @@ describe("Web3 Auth Routes", () => {
       expect(body.nonceId).toBeDefined();
       expect(body.nonce).toBeDefined();
       expect(body.nonce).toHaveLength(64); // 32 bytes hex
-      expect(body.message).toContain("Sign this message to authenticate with MoltMarket");
+      expect(body.message).toContain("Sign this message to authenticate with OpenSight");
       expect(body.message).toContain(body.nonce);
     });
 
@@ -158,7 +158,7 @@ describe("Web3 Auth Routes", () => {
       expect(body.walletAddress).toBe(normalizeAddress(TEST_WALLET.address));
       expect(body.xHandle).toBe("testuser");
       expect(body.xName).toBe("Test User");
-      expect(body.balanceCoin).toBe(100); // Starting balance
+      expect(body.balanceCoin).toBe(0); // No free starting balance
 
       // Verify user was created in DB
       const user = await prisma.user.findUnique({
@@ -166,7 +166,7 @@ describe("Web3 Auth Routes", () => {
       });
       expect(user).toBeTruthy();
       expect(user?.walletAddress).toBe(normalizeAddress(TEST_WALLET.address));
-      expect(user?.balanceMicros).toBe(100000000n); // 100 * 1_000_000
+      expect(user?.balanceMicros).toBe(0n); // No free starting balance
     });
 
     it("should reject invalid or expired nonce", async () => {
@@ -380,7 +380,7 @@ describe("Web3 Auth Routes", () => {
       expect(body.walletAddress).toBe(normalizeAddress(TEST_WALLET.address));
       expect(body.xHandle).toBe("testuser");
       expect(body.xName).toBe("Test User");
-      expect(body.balanceCoin).toBe(100);
+      expect(body.balanceCoin).toBe(0);
       expect(body.claimedAgents).toEqual([]);
     });
 
@@ -443,7 +443,7 @@ describe("Web3 Auth Routes", () => {
       
       expect(profile.userId).toBe(userId);
       expect(profile.accountType).toBe("HUMAN");
-      expect(profile.balanceCoin).toBe(100);
+      expect(profile.balanceCoin).toBe(0);
     });
   });
 });

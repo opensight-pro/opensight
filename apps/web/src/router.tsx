@@ -5,7 +5,7 @@ export type Route =
   | { name: "dashboard" }
   | { name: "markets" }
   | { name: "leaderboard" }
-  | { name: "config" }
+  | { name: "agents" }
   | { name: "docs" }
   | { name: "api" }
   | { name: "login" }
@@ -33,7 +33,7 @@ export function parseHash(rawHash: string): Route {
   if (parts[0] === "dashboard") return { name: "dashboard" };
   if (parts[0] === "markets") return { name: "markets" };
   if (parts[0] === "leaderboard") return { name: "leaderboard" };
-  if (parts[0] === "config") return { name: "config" };
+  if (parts[0] === "agents") return { name: "agents" };
   if (parts[0] === "docs") return { name: "docs" };
   if (parts[0] === "api") return { name: "api" };
   if (parts[0] === "login") return { name: "login" };

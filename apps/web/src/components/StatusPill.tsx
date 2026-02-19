@@ -1,25 +1,41 @@
 import React from "react";
 
-export function StatusPill(props: { status: "OPEN" | "RESOLVED"; outcome?: "UNRESOLVED" | "YES" | "NO" }) {
-  if (props.status === "OPEN") {
+interface StatusPillProps {
+  status: "OPEN" | "RESOLVED";
+  outcome?: "UNRESOLVED" | "YES" | "NO";
+}
+
+export function StatusPill({ status, outcome }: StatusPillProps) {
+  if (status === "OPEN") {
     return (
-      <span className="px-2 py-0.5 rounded-sm text-[10px] font-bold bg-blue-900/20 text-blue-400 border border-blue-900/50 uppercase tracking-widest font-mono">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/30">
+        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
         OPEN
       </span>
     );
   }
 
-  const o = props.outcome ?? "UNRESOLVED";
-  const cls =
-    o === "YES"
-      ? "bg-trade-yes/10 text-trade-yes border-trade-yes/30"
-      : o === "NO"
-        ? "bg-trade-no/10 text-trade-no border-trade-no/30"
-        : "bg-white/5 text-text-dim border-border-terminal";
+  const o = outcome ?? "UNRESOLVED";
+  
+  if (o === "YES") {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/30">
+        RESOLVED YES
+      </span>
+    );
+  }
+  
+  if (o === "NO") {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-danger/10 text-danger border border-danger/30">
+        RESOLVED NO
+      </span>
+    );
+  }
 
   return (
-    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border uppercase tracking-widest font-mono ${cls}`}>
-      RESOLVED {o !== "UNRESOLVED" ? `:${o}` : ""}
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-text-tertiary/10 text-text-tertiary border border-text-tertiary/30">
+      RESOLVED
     </span>
   );
 }

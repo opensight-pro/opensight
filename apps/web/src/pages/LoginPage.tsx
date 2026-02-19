@@ -1,8 +1,7 @@
 import React from "react";
 import { useConnect, useAccount, useSignMessage, useConnectors } from "wagmi";
 
-import { TerminalHeader } from "../components/TerminalHeader";
-import { TerminalTitleBar } from "../components/TerminalTitleBar";
+import { TopNavigation } from "../components/TopNavigation";
 import { useSession, useCompleteWalletLogin } from "../state/session";
 
 export function LoginPage() {
@@ -14,35 +13,28 @@ export function LoginPage() {
   const { signMessageAsync, isPending: isSigning } = useSignMessage();
 
   const [error, setError] = React.useState<string>("");
-  const [nonceId, setNonceId] = React.useState<string>("");
   const [isVerifying, setIsVerifying] = React.useState(false);
 
-  // Handle wallet connection and nonce retrieval
+  // Handle wallet connection
   const handleConnect = async () => {
     setError("");
     const connector = connectors.at(0);
     if (connector) {
-      connector.connect()
+      connector.connect();
     } else {
       setError("MetaMask not detected. Please install MetaMask.");
     }
   };
 
-  // Handle sign and verify after connection
+  // Handle sign and verify
   const handleSignAndVerify = async () => {
     if (!address) return;
     setError("");
     setIsVerifying(true);
 
     try {
-      // Step 1: Get nonce
       const nonceRes = await session.loginWithWallet(address);
-      setNonceId(nonceRes.nonceId);
-
-      // Step 2: Sign message
       const signature = await signMessageAsync({ message: nonceRes.message });
-
-      // Step 3: Verify and get API key
       await completeWalletLogin({
         nonceId: nonceRes.nonceId,
         walletAddress: address,
@@ -55,7 +47,7 @@ export function LoginPage() {
     }
   };
 
-  // Handle X OAuth errors (legacy, kept but hidden)
+  // Handle OAuth errors (legacy)
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
     const err = params.get("error");
@@ -72,34 +64,39 @@ export function LoginPage() {
     }
   }, []);
 
+  // Logged in state
   if (session.isLoggedIn) {
     return (
-      <div className="min-h-screen bg-bg-terminal text-text-dim font-mono flex flex-col terminal-grid">
-        <TerminalHeader activePath="/login" />
-        <main className="flex-1 w-full max-w-[800px] mx-auto p-4 flex flex-col items-center justify-center">
-          <TerminalTitleBar title="ACCOUNT" accent="primary" className="w-full mb-6" />
-          <div className="w-full bg-surface-terminal border border-border-terminal p-6 rounded-sm">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="size-12 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold">
-                {session.isHuman ? "H" : "A"}
-              </div>
-              <div>
-                <div className="text-white font-bold">
-                  {session.isHuman && session.walletAddress
-                    ? `${session.walletAddress.slice(0, 6)}...${session.walletAddress.slice(-4)}`
-                    : session.agentId?.slice(0, 8) || "Unknown"}
-                </div>
-                {session.isHuman && session.walletAddress && (
-                  <div className="text-text-dim text-sm font-mono">{session.walletAddress}</div>
-                )}
-                <div className="text-[10px] text-primary uppercase mt-1">
-                  {session.isHuman ? "HUMAN ACCOUNT" : "AGENT ACCOUNT"}
-                </div>
-              </div>
+      <div className="min-h-screen bg-bg-main">
+        <TopNavigation activePath="/login" />
+        
+        <main className="max-w-md mx-auto px-4 py-16">
+          <div className="bg-surface rounded-xl border border-border p-8 text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">{session.isHuman ? "👤" : "🤖"}</span>
             </div>
+            
+            <h1 className="text-xl font-bold text-text-main mb-2">
+              {session.isHuman ? "Wallet Connected" : "Agent Connected"}
+            </h1>
+            
+            <div className="bg-bg-secondary rounded-lg p-4 mb-6">
+              {session.walletAddress ? (
+                <>
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Wallet Address</p>
+                  <p className="text-text-main font-mono text-sm break-all">{session.walletAddress}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-text-tertiary text-xs uppercase mb-1">Agent ID</p>
+                  <p className="text-text-main font-mono text-sm">{session.agentId}</p>
+                </>
+              )}
+            </div>
+
             <button
               onClick={session.disconnect}
-              className="w-full px-4 py-3 bg-neon-red/10 border border-neon-red/40 text-neon-red font-bold text-sm uppercase rounded-sm hover:bg-neon-red/20 transition-colors"
+              className="w-full py-3 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-lg font-semibold transition-colors"
             >
               Disconnect
             </button>
@@ -110,75 +107,97 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-terminal text-text-dim font-mono flex flex-col terminal-grid">
-      <TerminalHeader activePath="/login" />
-      <main className="flex-1 w-full max-w-[800px] mx-auto p-4 flex flex-col items-center justify-center">
-        <TerminalTitleBar title="LOGIN" accent="primary" className="w-full mb-6" />
-        <div className="w-full bg-surface-terminal border border-border-terminal p-6 rounded-sm">
+    <div className="min-h-screen bg-bg-main">
+      <TopNavigation activePath="/login" />
+      
+      <main className="max-w-md mx-auto px-4 py-16">
+        <div className="bg-surface rounded-xl border border-border p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-text-main mb-2">Connect Wallet</h1>
+            <p className="text-text-secondary text-sm">
+              Connect your wallet to start trading on OpenSight
+            </p>
+          </div>
+
+          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-neon-red/10 border border-neon-red/40 text-neon-red text-sm rounded-sm">
+            <div className="mb-6 p-4 bg-danger/10 border border-danger/30 text-danger text-sm rounded-lg">
               {error}
+            </div>
+          )}
+
+          {/* Connection Error */}
+          {connectError && (
+            <div className="mb-6 p-4 bg-danger/10 border border-danger/30 text-danger text-sm rounded-lg">
+              {connectError.message}
             </div>
           )}
 
           {!isConnected ? (
             // Step 1: Connect Wallet
-            <>
-              <p className="text-text-dim mb-6 text-sm">
-                Connect your wallet to trade on OpenCast as a human. Your wallet address will be used for
-                authentication and leaderboard identification.
-              </p>
+            <div className="space-y-4">
               <button
                 onClick={handleConnect}
                 disabled={isConnecting}
-                className="w-full px-4 py-3 bg-primary/10 border border-primary/40 text-primary font-bold text-sm uppercase rounded-sm hover:bg-primary/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-primary hover:bg-primary-hover disabled:opacity-50 text-bg-main font-bold rounded-lg transition-colors flex items-center justify-center gap-3"
               >
-                <svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-10 8c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-10 8c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
                 </svg>
-                {isConnecting ? "Connecting..." : "Connect MetaMask"}
+                {isConnecting ? "Connecting…" : "Connect MetaMask"}
               </button>
-              {connectError && (
-                <div className="mt-4 p-3 bg-neon-red/10 border border-neon-red/40 text-neon-red text-sm rounded-sm">
-                  {connectError.message}
-                </div>
-              )}
-            </>
+
+              <div className="text-center text-text-tertiary text-sm">
+                <p>New to crypto wallets?</p>
+                <a 
+                  href="https://metamask.io/download/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary-hover font-medium"
+                >
+                  Get MetaMask →
+                </a>
+              </div>
+            </div>
           ) : (
             // Step 2: Sign Message
-            <>
-              <div className="mb-4 p-3 bg-neon-green/10 border border-neon-green/40 text-neon-green rounded-sm text-sm">
-                <div className="font-bold mb-1">Wallet Connected</div>
-                <div className="font-mono">{address}</div>
+            <div className="space-y-4">
+              <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-success font-medium">Wallet Connected</span>
+                </div>
+                <p className="text-text-secondary text-sm font-mono break-all">{address}</p>
               </div>
-              <p className="text-text-dim mb-6 text-sm">
-                Sign the message to authenticate with OpenCast. This proves you own the wallet address.
+
+              <p className="text-text-secondary text-sm text-center">
+                Sign the message to authenticate with OpenSight. This proves you own the wallet address.
               </p>
+
               <button
                 onClick={() => void handleSignAndVerify()}
                 disabled={isSigning || isVerifying}
-                className="w-full px-4 py-3 bg-primary/10 border border-primary/40 text-primary font-bold text-sm uppercase rounded-sm hover:bg-primary/20 transition-colors disabled:opacity-50"
+                className="w-full py-4 bg-primary hover:bg-primary-hover disabled:opacity-50 text-bg-main font-bold rounded-lg transition-colors"
               >
-                {isSigning ? "Signing..." : isVerifying ? "Verifying..." : "Sign & Login"}
+                {isSigning ? "Signing…" : isVerifying ? "Verifying…" : "Sign & Login"}
               </button>
+
               <button
                 onClick={session.disconnect}
-                className="w-full mt-3 px-4 py-2 border border-border-terminal text-text-dim text-xs uppercase rounded-sm hover:text-white transition-colors"
+                className="w-full py-3 border border-border hover:border-text-secondary text-text-secondary hover:text-text-main rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
-            </>
+            </div>
           )}
-
-          {/* <div className="mt-6 pt-6 border-t border-border-terminal">
-            <p className="text-text-dim text-xs mb-3">Or register as an AI agent:</p>
-            <button
-              onClick={() => void session.registerAgent()}
-              className="w-full px-4 py-2 bg-primary/10 border border-primary/40 text-primary font-bold text-xs uppercase rounded-sm hover:bg-primary/20 transition-colors"
-            >
-              Register Agent
-            </button>
-          </div> */}
         </div>
       </main>
     </div>

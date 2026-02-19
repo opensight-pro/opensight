@@ -21,6 +21,9 @@ interface ChartResponse {
 
 /**
  * Fetch historical price data from Polymarket CLOB API
+ * 
+ * Fidelity parameter: controls granularity in minutes.
+ * - For longer intervals (1w, 1m), we use higher fidelity (coarser granularity)
  */
 async function fetchPolymarketHistory(
   externalId: string,
@@ -34,10 +37,16 @@ async function fetchPolymarketHistory(
     url.searchParams.append("interval", interval);
     url.searchParams.append("startTs", startTs.toString());
     url.searchParams.append("endTs", endTs.toString());
+    
+    // Add fidelity parameter - resolution in minutes
+    // Higher fidelity = coarser granularity = fewer data points
+    const fidelity = getFidelityForInterval(interval);
+    url.searchParams.append("fidelity", fidelity.toString());
 
     const response = await fetch(url.toString());
     if (!response.ok) {
-      console.error(`[Chart] Polymarket API error: ${JSON.stringify(response)}`);
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error(`[Chart] Polymarket API error: ${response.status} ${errorText}`);
       return [];
     }
     
@@ -53,6 +62,24 @@ async function fetchPolymarketHistory(
   } catch (err) {
     console.error("[Chart] Failed to fetch Polymarket history:", err);
     return [];
+  }
+}
+
+/**
+ * Get appropriate fidelity value for interval
+ * Fidelity = resolution in minutes
+ * Polymarket has minimum fidelity requirements per range:
+ * - Longer ranges require higher fidelity (more aggregation)
+ */
+function getFidelityForInterval(interval: string): number {
+  switch (interval) {
+    case "1h": return 1;    // 1 min resolution for 1 hour
+    case "6h": return 5;    // 5 min resolution for 6 hours
+    case "1d": return 15;   // 15 min resolution for 1 day
+    case "1w": return 60;   // 60 min (1 hour) resolution for 1 week - minimum is 5
+    case "1m": return 240;  // 4 hour resolution for 1 month
+    case "max": return 1440; // Daily resolution for max range
+    default: return 15;
   }
 }
 
@@ -132,6 +159,88 @@ async function getMarketInitialPrice(marketId: string): Promise<number | null> {
     yesMicros: pool.yesSharesMicros,
     noMicros: pool.noSharesMicros
   });
+}
+
+/**
+ * Hash function to generate a deterministic value from inputs
+ * Returns a value between 0 and 1
+ */
+function hashToFloat(marketId: string, delta: number, salt: string): number {
+  const str = `${marketId}-${delta}-${salt}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  // Convert to positive 0-1 range
+  return (Math.abs(hash) % 1000000) / 1000000;
+}
+
+/**
+ * Generate synthetic chart data for markets without externalId
+ * Each point's price is deterministically derived from:
+ * - The delta (time from now): so chart looks the same regardless of when queried
+ * - The marketId: so different markets have different patterns
+ * - The targetPrice: so chart ends at current price
+ */
+function generateSyntheticChartData(
+  targetPrice: number,
+  startTime: Date,
+  endTime: Date,
+  bucketMinutes: number,
+  marketId: string
+): ChartPoint[] {
+  const points: ChartPoint[] = [];
+  const startTs = Math.floor(startTime.getTime() / 1000);
+  const endTs = Math.floor(endTime.getTime() / 1000);
+  const bucketSeconds = bucketMinutes * 60;
+  const totalDuration = endTs - startTs;
+  
+  // Calculate number of points
+  const numPoints = Math.max(10, Math.floor(totalDuration / bucketSeconds));
+  
+  // Generate deterministic start price based on marketId
+  const startPrice = 0.25 + hashToFloat(marketId, totalDuration, "start") * 0.5; // 0.25 to 0.75
+  
+  // Create points
+  for (let i = 0; i < numPoints; i++) {
+    const progress = i / (numPoints - 1); // 0 to 1
+    const currentTs = startTs + i * bucketSeconds;
+    
+    // Delta is how far back from "now" (end time) this point is
+    const delta = endTs - currentTs;
+    
+    // Base price: interpolate from start to target
+    const basePrice = startPrice + (targetPrice - startPrice) * progress;
+    
+    // Add deterministic "noise" based on delta from now and marketId
+    // Using delta means the chart shape is consistent regardless of absolute time
+    const noise1 = (hashToFloat(marketId, delta, "noise1") - 0.5) * 0.15;
+    const noise2 = Math.sin(progress * Math.PI * 4) * 0.05 * hashToFloat(marketId, delta, "wave");
+    
+    // Combine base price with noise
+    let price = basePrice + noise1 + noise2;
+    
+    // For the last point (delta=0), exactly match target price
+    if (i === numPoints - 1) {
+      price = targetPrice;
+    } else {
+      // Clamp between 0.01 and 0.99
+      price = Math.max(0.01, Math.min(0.99, price));
+    }
+    
+    // Deterministic volume based on delta from now
+    const volume = Math.floor(hashToFloat(marketId, delta, "volume") * 2000) + 50;
+    
+    points.push({
+      timestamp: currentTs,
+      priceYes: Math.round(price * 1000) / 1000,
+      volume
+    });
+  }
+  
+  return points;
 }
 
 /**
@@ -239,23 +348,17 @@ async function getChartData(
       data = await aggregateLocalTrades(marketId, startTime, endTime, bucketMinutes);
     }
   } else {
-    // Local-only market: just aggregate our trades
-    data = await aggregateLocalTrades(marketId, startTime, endTime, bucketMinutes);
-  }
-  
-  // If no trades yet, return initial price point
-  if (data.length === 0 && market.pool) {
-    const initialPrice = quotePriceYes({
+    // Local-only market (no externalId): generate synthetic chart data
+    // This creates a realistic-looking chart that ends at the current price
+    const currentPrice = market.pool ? quotePriceYes({
       yesMicros: market.pool.yesSharesMicros,
       noMicros: market.pool.noSharesMicros
-    });
+    }) : 0.5;
     
-    data = [
-      {
-        timestamp: Math.floor(market.createdAt.getTime() / 1000),
-        priceYes: initialPrice
-      }
-    ];
+    // Use synthetic data that ends at the current price
+    // Pass marketId as seed for deterministic generation
+    data = generateSyntheticChartData(currentPrice, startTime, endTime, bucketMinutes, market.id);
+    source = "local";
   }
   
   return {

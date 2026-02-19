@@ -103,7 +103,7 @@ export async function createAgentWithApiKey(
     }
   });
   
-  const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://molt.market";
+  const FRONTEND_URL = process.env.FRONTEND_URL ?? "https://opensight.markets";
   const claimUrl = `${FRONTEND_URL}/#/claim/${claimToken}`;
   
   return {

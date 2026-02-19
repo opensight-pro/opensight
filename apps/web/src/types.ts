@@ -135,3 +135,59 @@ export type Web3ClaimVerifyResponse = {
   balanceCoin: number;
   claimedBy: { userId: string; walletAddress: string };
 };
+
+// Payment Types
+export type PaymentDirection = "DEPOSIT" | "WITHDRAW";
+
+export type PaymentStatus = "PENDING" | "CONFIRMED" | "FAILED" | "SENT";
+
+export type Payment = {
+  id: string;
+  requestId: string;
+  direction: PaymentDirection;
+  status: PaymentStatus;
+  bnbAmountWei: string;
+  bnbAmount: string;
+  coinAmount: number;
+  txHash: string | null;
+  walletAddress: string;
+  createdAt: string;
+  confirmedAt: string | null;
+  sentAt: string | null;
+  failedAt: string | null;
+  errorMessage: string | null;
+};
+
+export type DepositIntentResponse = {
+  requestId: string;
+  walletAddress: string;
+  status: string;
+};
+
+export type DepositConfirmResponse = {
+  paymentId: string;
+  requestId: string;
+  status: string;
+  bnbAmountWei: string;
+  coinAmount: number;
+  txHash: string;
+};
+
+export type WithdrawRequestResponse = {
+  requestId: string;
+  bnbAmountWei: string;
+  bnbAmount: string;
+  walletAddress: string;
+  status: string;
+};
+
+export type WithdrawConfirmResponse = {
+  paymentId: string;
+  requestId: string;
+  status: string;
+  txHash: string;
+};
+
+export type PaymentHistoryResponse = {
+  payments: Payment[];
+};

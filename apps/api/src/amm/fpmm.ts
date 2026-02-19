@@ -106,5 +106,5 @@ export function quotePriceYes(pool: Pick<BinaryPoolState, "yesMicros" | "noMicro
   const denom = pool.yesMicros + pool.noMicros;
   if (denom <= 0n) return 0.5;
   // Note: number conversion is for UI display only; trading uses bigint math.
-  return Number(pool.noMicros) / Number(denom);
+  return Number(pool.yesMicros) / Number(denom);
 }

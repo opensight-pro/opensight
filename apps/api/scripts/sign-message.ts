@@ -11,7 +11,7 @@
  * Example:
  *   pnpm tsx scripts/sign-message.ts \
  *     0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97 \
- *     "Sign this message to authenticate with MoltMarket\nNonce: abc123"
+ *     "Sign this message to authenticate with OpenSight\nNonce: abc123"
  */
 
 import { ethers } from "ethers";

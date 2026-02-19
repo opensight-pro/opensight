@@ -2,7 +2,7 @@ import React from "react";
 import { useConnect, useAccount, useSignMessage, useConnectors } from "wagmi";
 
 import { apiGet, apiPost } from "../api";
-import { TerminalHeader } from "../components/TerminalHeader";
+import { TopNavigation } from "../components/TopNavigation";
 import { TerminalTitleBar } from "../components/TerminalTitleBar";
 import { fmtCoin } from "../lib/format";
 import type { Web3ClaimNonceResponse, Web3ClaimVerifyResponse } from "../types";
@@ -92,7 +92,7 @@ export function ClaimPage({ token }: { token: string }) {
 
   return (
     <div className="min-h-screen bg-bg-terminal text-text-dim font-mono flex flex-col terminal-grid">
-      <TerminalHeader activePath="" />
+      <TopNavigation activePath="" />
       <main className="flex-1 w-full max-w-[800px] mx-auto p-4 flex flex-col items-center justify-center">
         <TerminalTitleBar title="CLAIM_AGENT" accent="primary" className="w-full mb-6" />
         <div className="w-full bg-surface-terminal border border-border-terminal p-6 rounded-sm">
@@ -112,7 +112,7 @@ export function ClaimPage({ token }: { token: string }) {
                 <div>
                   <div className="text-white font-bold text-lg">{agent.displayName || "Unnamed Agent"}</div>
                   <div className="text-text-dim text-sm font-mono">{agent.agentId.slice(0, 8)}...</div>
-                  <div className="text-primary text-sm mt-1">{fmtCoin(agent.balanceCoin)} $OC</div>
+                  <div className="text-primary text-sm mt-1">{fmtCoin(agent.balanceCoin)} Coin</div>
                 </div>
               </div>
 

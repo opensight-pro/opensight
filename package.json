@@ -1,16 +1,17 @@
 {
-  "name": "molt-market",
+  "name": "opensight",
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm -r dev",
-    "start": "pnpm --filter @molt/api db:generate && pnpm --filter @molt/api db:deploy && pnpm --filter @molt/api start",
+    "start": "pnpm --filter @opensight/api db:generate && pnpm --filter @opensight/api db:deploy && pnpm --filter @opensight/api build && pnpm --filter @opensight/api start",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "db:generate": "pnpm --filter @molt/api db:generate",
-    "db:migrate": "pnpm --filter @molt/api db:migrate",
-    "db:seed": "pnpm --filter @molt/api db:seed",
-    "db:deploy": "pnpm --filter @molt/api db:deploy"
+    "db:generate": "pnpm --filter @opensight/api db:generate",
+    "db:migrate": "pnpm --filter @opensight/api db:migrate",
+    "db:seed": "pnpm --filter @opensight/api db:seed",
+    "db:deploy": "pnpm --filter @opensight/api db:deploy",
+    "simulate": "pnpm --filter @opensight/terminal-showcase exec tsx simulation.ts"
   }
 }

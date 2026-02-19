@@ -2,7 +2,7 @@ import React from "react";
 import { useDisconnect } from "wagmi";
 
 import { apiGet } from "../api";
-import { TerminalHeader } from "../components/TerminalHeader";
+import { TopNavigation } from "../components/TopNavigation";
 import { TerminalTitleBar } from "../components/TerminalTitleBar";
 import { fmtCoin } from "../lib/format";
 import { Link } from "../router";
@@ -41,7 +41,7 @@ export function UserProfilePage({ userId }: { userId: string }) {
 
   return (
     <div className="min-h-screen bg-bg-terminal text-text-dim font-mono flex flex-col terminal-grid">
-      <TerminalHeader activePath="" />
+      <TopNavigation activePath="" />
       <main className="flex-1 w-full max-w-[1200px] mx-auto p-4">
         <TerminalTitleBar title="USER_PROFILE" accent="primary" className="mb-6" />
         {loading ? (
@@ -66,7 +66,7 @@ export function UserProfilePage({ userId }: { userId: string }) {
               </div>
               <div className="border-t border-border-terminal pt-4">
                 <div className="text-[10px] text-text-dim uppercase mb-1">Balance</div>
-                <div className="text-white text-xl font-bold">{fmtCoin(user.balanceCoin)} $OC</div>
+                <div className="text-white text-xl font-bold">{fmtCoin(user.balanceCoin)} Coin</div>
               </div>
 
               {/* Disconnect Button - Only show for own profile */}

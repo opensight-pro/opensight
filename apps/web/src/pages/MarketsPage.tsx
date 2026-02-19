@@ -4,11 +4,7 @@ import { useMarkets } from "../hooks/useMarkets";
 import { fmtPct01 } from "../lib/format";
 
 import { StatusPill } from "../components/StatusPill";
-import { TerminalHeader } from "../components/TerminalHeader";
-import { TerminalSearchInput } from "../components/TerminalSearchInput";
-import { TerminalSegmented } from "../components/TerminalSegmented";
-import { TerminalTable } from "../components/TerminalTable";
-import { TerminalTitleBar } from "../components/TerminalTitleBar";
+import { TopNavigation } from "../components/TopNavigation";
 
 export function MarketsPage() {
   const marketsQ = useMarkets();
@@ -23,115 +19,166 @@ export function MarketsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-bg-terminal text-text-dim font-mono terminal-grid">
-      <TerminalHeader activePath="/markets" />
+    <div className="min-h-screen bg-bg-main">
+      <TopNavigation activePath="/markets" />
 
-      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 flex flex-col gap-4">
-        <TerminalTitleBar
-          title="MARKETS_ARENA"
-          accent="primary"
-          subtitle={
-            <>
-              System Status: <span className="text-neon-green">ONLINE</span> | Trading: CLOB | Mode: M0
-            </>
-          }
-          right={
-            <>
-              <div className="text-[10px] text-text-dim uppercase">Loaded</div>
-              <div className="text-xs text-white">{marketsQ.markets.length} markets</div>
-            </>
-          }
-        />
+      <main className="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">Markets</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              {marketsQ.markets.length} prediction markets available
+            </p>
+          </div>
+          <button
+            onClick={() => void marketsQ.refresh()}
+            className="self-start px-4 py-2 bg-surface hover:bg-surface-hover border border-border text-text-secondary hover:text-text-main text-sm font-medium rounded transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <TerminalSegmented
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: "OPEN", label: "[ OPEN ]" },
-              { value: "RESOLVED", label: "[ RESOLVED ]" },
-              { value: "ALL", label: "[ ALL ]" }
-            ]}
-          />
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Status Tabs */}
+          <div className="flex bg-surface rounded-lg p-1 border border-border">
+            {[
+              { value: "OPEN" as const, label: "Open" },
+              { value: "RESOLVED" as const, label: "Resolved" },
+              { value: "ALL" as const, label: "All" }
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatus(tab.value)}
+                className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+                  status === tab.value
+                    ? "bg-primary text-bg-main"
+                    : "text-text-secondary hover:text-text-main"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          <div className="flex items-center gap-3">
-            <TerminalSearchInput value={q} onChange={setQ} placeholder="> Search markets..." accent="primary" />
-            <button
-              className="px-2 py-1.5 rounded-sm bg-primary/10 text-primary border border-primary/40 text-[10px] uppercase font-bold hover:bg-primary/20 transition-colors"
-              onClick={() => void marketsQ.refresh()}
-              type="button"
-            >
-              Refresh
-            </button>
+          {/* Search */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search markets..."
+                className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-main placeholder-text-tertiary focus:border-primary focus:outline-none transition-colors"
+              />
+            </div>
           </div>
         </div>
 
-        <TerminalTable
-          className="flex-1"
-          head={
-            <tr className="border-b border-border-terminal bg-surface-terminal text-[10px] text-text-dim uppercase tracking-widest font-mono">
-              <th className="p-3 w-12 text-center">#</th>
-              <th className="p-3">Question</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-right">YES</th>
-              <th className="p-3 text-right">NO</th>
-            </tr>
-          }
-          body={
-            <tbody className="divide-y divide-border-terminal text-xs">
-              {marketsQ.loading ? (
-                <tr>
-                  <td className="p-4 text-text-dim" colSpan={5}>
-                    Loading…
-                  </td>
+        {/* Markets Table */}
+        <div className="bg-surface rounded-lg border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-bg-secondary text-text-secondary text-xs uppercase">
+                  <th className="px-4 py-3 text-left font-medium w-16">#</th>
+                  <th className="px-4 py-3 text-left font-medium">Market</th>
+                  <th className="px-4 py-3 text-center font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">YES Price</th>
+                  <th className="px-4 py-3 text-right font-medium">NO Price</th>
+                  <th className="px-4 py-3 text-right font-medium">Implied Odds</th>
                 </tr>
-              ) : marketsQ.error ? (
-                <tr>
-                  <td className="p-4 text-red-400" colSpan={5}>
-                    {marketsQ.error}
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td className="p-4 text-text-dim" colSpan={5}>
-                    No markets.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((m, idx) => (
-                  <tr
-                    key={m.id}
-                    className="hover:bg-surface-terminal/60 transition-colors cursor-pointer"
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => {
-                      window.location.hash = `#/market/${m.id}`;
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        window.location.hash = `#/market/${m.id}`;
-                      }
-                    }}
-                  >
-                    <td className="p-3 text-center font-bold text-primary">{String(idx + 1).padStart(2, "0")}</td>
-                    <td className="p-3">
-                      <div className="flex flex-col">
-                        <div className="text-white font-bold tracking-tight">{m.title}</div>
-                        <div className="text-[10px] text-text-dim font-mono mt-1 truncate">{m.description ?? ""}</div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {marketsQ.loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-text-secondary">
+                      <div className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Loading markets…
                       </div>
                     </td>
-                    <td className="p-3 text-center">
-                      <StatusPill status={m.status} outcome={m.outcome} />
-                    </td>
-                    <td className="p-3 text-right text-trade-yes font-mono">{fmtPct01(m.priceYes)}</td>
-                    <td className="p-3 text-right text-trade-no font-mono">{fmtPct01(m.priceNo)}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          }
-        />
+                ) : marketsQ.error ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-danger">
+                      {marketsQ.error}
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-text-secondary">
+                      No markets found matching your criteria
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((m, idx) => (
+                    <tr
+                      key={m.id}
+                      onClick={() => {
+                        window.location.hash = `#/market/${m.id}`;
+                      }}
+                      className="hover:bg-surface-hover/50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-4 text-text-tertiary font-mono">
+                        {String(idx + 1).padStart(2, "0")}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-text-main font-medium hover:text-primary transition-colors">
+                            {m.title}
+                          </span>
+                          {m.description && (
+                            <span className="text-text-tertiary text-xs mt-0.5 truncate max-w-md">
+                              {m.description}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <StatusPill status={m.status} outcome={m.outcome} />
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="text-success font-mono font-medium">{fmtPct01(m.priceYes)}</span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="text-danger font-mono font-medium">{fmtPct01(m.priceNo)}</span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-success"
+                              style={{ width: `${m.priceYes * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-text-secondary text-xs font-mono">
+                            {Math.round(m.priceYes * 100)}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -100,7 +100,13 @@ describe.sequential("E2E Scenarios", () => {
         payload: { walletAddress, nonceId, signature }
       });
       expect(verifyRes.statusCode).toBe(200);
-      const { apiKey: humanApiKey } = JSON.parse(verifyRes.body);
+      const { apiKey: humanApiKey, userId } = JSON.parse(verifyRes.body);
+      
+      // Fund the user for trading (users start with 0 balance)
+      await prisma.user.update({
+        where: { id: userId },
+        data: { balanceMicros: 1000_000_000n } // 1000 coins for testing
+      });
       
       // 2. Create agent (self-registration)
       const agentRes = await app.inject({
@@ -216,7 +222,13 @@ describe.sequential("E2E Scenarios", () => {
         url: "/auth/web3/verify",
         payload: { walletAddress, nonceId, signature }
       });
-      const { apiKey: humanApiKey, balanceCoin: initialBalance } = JSON.parse(verifyRes.body);
+      const { apiKey: humanApiKey, balanceCoin: initialBalance, userId } = JSON.parse(verifyRes.body);
+      
+      // Fund the user for trading (users start with 0 balance)
+      await prisma.user.update({
+        where: { id: userId },
+        data: { balanceMicros: 1000_000_000n } // 1000 coins for testing
+      });
       
       // Create and claim agent
       const agentRes = await app.inject({
@@ -225,7 +237,7 @@ describe.sequential("E2E Scenarios", () => {
         payload: { displayName: "Settlement Test Agent" }
       });
       const { apiKey: agentApiKey, claimUrl } = JSON.parse(agentRes.body);
-      // claimUrl is like "https://molt.market/#/claim/{token}" or "http://localhost/#/claim/{token}"
+      // claimUrl is like "https://opensight.markets/#/claim/{token}" or "http://localhost/#/claim/{token}"
       const claimToken = claimUrl.split("/claim/").pop();
       
       // Claim

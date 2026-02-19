@@ -13,14 +13,14 @@
   }
 
   body {
-    @apply bg-bg-terminal text-text-dim font-display antialiased;
+    @apply bg-bg-main text-text-secondary font-display antialiased;
   }
 }
 
 @layer utilities {
+  /* Terminal grid - deprecated but kept for compatibility */
   .terminal-grid {
-    background-image: theme("backgroundImage.terminal-grid");
-    background-size: 20px 20px;
+    background-image: none;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -31,26 +31,32 @@
     scrollbar-width: none;
   }
 
+  /* Binance-style scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: #050505;
+    background: #0B0E11;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 0;
+    background: #2B3139;
+    border-radius: 3px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #ff3333;
+    background: #F0B90B;
   }
 
+  /* Text glow - updated to Binance colors */
   .text-glow-red {
-    text-shadow: 0 0 8px rgba(255, 62, 62, 0.6);
+    text-shadow: 0 0 8px rgba(246, 70, 93, 0.4);
   }
 
   .text-glow-green {
-    text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+    text-shadow: 0 0 8px rgba(14, 203, 129, 0.4);
+  }
+  
+  .text-glow-yellow {
+    text-shadow: 0 0 8px rgba(240, 185, 11, 0.4);
   }
 }

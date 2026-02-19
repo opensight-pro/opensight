@@ -1,5 +1,5 @@
 {
-  "name": "@molt/api",
+  "name": "@opensight/api",
   "private": true,
   "type": "module",
   "scripts": {
